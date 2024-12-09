@@ -7,62 +7,149 @@
       }
     },
     {
-      "path": "pages/coach/coach",
+      "path": "pages/profile/profile",
       "style": {
-        "navigationBarTitleText": "教练"
-      }
-    },
-    {
-      "path": "pages/nearby/nearby",
-      "style": {
-        "navigationBarTitleText": "附近"
+        "navigationBarTitleText": "个人中心"
       }
     },
     {
       "path": "pages/orders/orders",
       "style": {
-        "navigationBarTitleText": "订单"
+        "navigationBarTitleText": "我的订单"
       }
     },
     {
-      "path": "pages/profile/profile",
+      "path": "pages/orders/select-order",
       "style": {
-        "navigationBarTitleText": "我的"
+        "navigationBarTitleText": "选择订单"
+      }
+    },
+    {
+      "path": "pages/nearby/nearby",
+      "style": {
+        "navigationBarTitleText": "附近门店"
+      }
+    },
+    {
+      "path": "pages/teacher/teacher",
+      "style": {
+        "navigationBarTitleText": "教员预约"
+      }
+    },
+    {
+      "path": "pages/teacher/teacher-recruit",
+      "style": {
+        "navigationBarTitleText": "教员招募"
+      }
+    },
+    {
+      "path": "pages/course/index",
+      "style": {
+        "navigationBarTitleText": "选择课程"
+      }
+    },
+    {
+      "path": "pages/voucher/index",
+      "style": {
+        "navigationBarTitleText": "优惠券"
+      }
+    },
+    {
+      "path": "pages/instrument/instrument-purchase",
+      "style": {
+        "navigationBarTitleText": "乐器购买"
+      }
+    },
+    {
+      "path": "pages/instrument/instrument-rental",
+      "style": {
+        "navigationBarTitleText": "乐器租赁"
+      }
+    },
+    {
+      "path": "pages/instrument/index",
+      "style": {
+        "navigationBarTitleText": "我的乐器"
+      }
+    },
+    {
+      "path": "pages/room/room-reservation",
+      "style": {
+        "navigationBarTitleText": "乐室预约"
+      }
+    },
+    {
+      "path": "pages/appointment/appointment",
+      "style": {
+        "navigationBarTitleText": "我的预约"
+      }
+    },
+    {
+      "path": "pages/address/address-manage",
+      "style": {
+        "navigationBarTitleText": "地址管理"
+      }
+    },
+    {
+      "path": "pages/service/index",
+      "style": {
+        "navigationBarTitleText": "客服"
+      }
+    },
+    {
+      "path": "pages/service/chat",
+      "style": {
+        "navigationBarTitleText": "客服"
+      }
+    },
+    {
+      "path": "pages/city/city-select",
+      "style": {
+        "navigationStyle": "custom"
       }
     }
   ],
-  "globalStyle": {
-    "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "用户中心",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
-  },
   "tabBar": {
     "color": "#999999",
     "selectedColor": "#ff4d4f",
     "backgroundColor": "#ffffff",
-    "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页"
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
       },
       {
-        "pagePath": "pages/coach/coach",
-        "text": "教练"
+        "pagePath": "pages/teacher/teacher",
+        "text": "教员",
+        "iconPath": "static/tabbar/teacher.png",
+        "selectedIconPath": "static/tabbar/teacher-active.png"
       },
       {
         "pagePath": "pages/nearby/nearby",
-        "text": "附近"
+        "text": "附近",
+        "iconPath": "static/tabbar/nearby.png",
+        "selectedIconPath": "static/tabbar/nearby-active.png"
       },
       {
         "pagePath": "pages/orders/orders",
-        "text": "订单"
+        "text": "订单",
+        "iconPath": "static/tabbar/order.png",
+        "selectedIconPath": "static/tabbar/order-active.png"
       },
       {
         "pagePath": "pages/profile/profile",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "static/tabbar/user.png",
+        "selectedIconPath": "static/tabbar/user-active.png"
       }
     ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "音乐教育",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#F5F5F5"
   }
 }

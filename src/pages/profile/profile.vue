@@ -1,225 +1,451 @@
 <template>
-  <view class="profile-page">
-    <!-- 用户信息卡片 -->
+  <view class="profile">
     <view class="user-card">
-      <view class="user-info">
-        <image 
-          class="avatar" 
-          :src="userInfo.avatar || '/static/default-avatar.png'"
+      <view class="user-info" @tap="handleLogin">
+        <image
+          class="avatar"
+          src="/static/icons/default-login-avatar.png"
           mode="aspectFill"
-        />
-        <view class="user-details">
-          <view class="name-row">
-            <text class="username">{{ userInfo.nickname || '未登录' }}</text>
-            <text class="user-level">Lv.{{ userInfo.level }}</text>
-          </view>
-          <view class="user-id">ID: {{ userInfo.id }}</view>
+        ></image>
+        <view class="info">
+          <text class="nickname">昵称</text>
+          <text class="uid">UID: 123456</text>
+        </view>
+        <view class="settings-btn" @tap="handleMenuClick('settings')">
+          <image
+            class="settings-icon"
+            src="/static/icons/settings.png"
+            mode="aspectFit"
+          ></image>
+          <text>设置</text>
         </view>
       </view>
-      <view class="edit-profile" @tap="handleEditProfile">
-        <text>编辑资料</text>
-        <text class="arrow">></text>
-      </view>
-    </view>
 
-    <!-- 用户数据概览 -->
-    <view class="user-stats">
-      <view class="stat-item" v-for="stat in stats" :key="stat.label">
-        <text class="stat-value">{{ stat.value }}</text>
-        <text class="stat-label">{{ stat.label }}</text>
-      </view>
-    </view>
-
-    <!-- 功能列表 -->
-    <view class="feature-groups">
-      <view class="feature-group" v-for="group in featureGroups" :key="group.title">
-        <view class="group-title">{{ group.title }}</view>
-        <view class="feature-list">
-          <view 
-            class="feature-item"
-            v-for="feature in group.features"
-            :key="feature.id"
-            @tap="handleFeatureClick(feature)"
-          >
-            <view class="feature-icon">{{ feature.icon }}</view>
-            <text class="feature-name">{{ feature.name }}</text>
-            <view class="feature-right">
-              <text v-if="feature.badge" class="badge">{{ feature.badge }}</text>
-              <text class="arrow">></text>
-            </view>
-          </view>
+      <view class="user-stats">
+        <view class="stat-item">
+          <text class="stat-value">{{ balance }}</text>
+          <text class="stat-label">账户余额</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{ couponCount }}</text>
+          <text class="stat-label">优惠券</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{ favoriteCount }}</text>
+          <text class="stat-label">我的收藏</text>
         </view>
       </view>
     </view>
 
-    <!-- 退出登录按钮 -->
-    <button class="logout-button" @tap="handleLogout">退出登录</button>
+    <view class="feature-grid">
+      <view class="feature-item" @tap="handleFeatureClick('teaching')">
+        <image
+          class="feature-icon"
+          src="/static/icons/teaching.png"
+          mode="aspectFit"
+        ></image>
+        <text class="feature-label">教员订单</text>
+      </view>
+      <view class="feature-item" @tap="handleFeatureClick('course')">
+        <image
+          class="feature-icon"
+          src="/static/icons/course.png"
+          mode="aspectFit"
+        ></image>
+        <text class="feature-label">课程订单</text>
+      </view>
+      <view class="feature-item" @tap="handleFeatureClick('coupon')">
+        <image
+          class="feature-icon"
+          src="/static/icons/coupon.png"
+          mode="aspectFit"
+        ></image>
+        <text class="feature-label">课程兑换码</text>
+      </view>
+    </view>
+
+    <view class="my-services-card">
+      <view class="section-title">我的服务</view>
+      <view class="services-grid">
+        <view class="service-item" @tap="handleServiceClick('appointment')">
+          <view class="service-icon-wrapper">
+            <image
+              class="service-icon"
+              src="/static/icons/appointment.png"
+              mode="aspectFit"
+            ></image>
+            <text class="service-count" v-if="appointmentCount !== 0">{{
+              appointmentCount
+            }}</text>
+          </view>
+          <text class="service-label">我的预约</text>
+        </view>
+        <view class="service-item" @tap="handleServiceClick('instrument')">
+          <view class="service-icon-wrapper">
+            <image
+              class="service-icon"
+              src="/static/icons/instrument.png"
+              mode="aspectFit"
+            ></image>
+            <text class="service-count" v-if="instrumentCount !== 0">{{
+              instrumentCount
+            }}</text>
+          </view>
+          <text class="service-label">我的乐器</text>
+        </view>
+        <view class="service-item" @tap="handleServiceClick('course')">
+          <view class="service-icon-wrapper">
+            <image
+              class="service-icon"
+              src="/static/icons/course.png"
+              mode="aspectFit"
+            ></image>
+            <text class="service-count" v-if="courseCount !== 0">{{
+              courseCount
+            }}</text>
+          </view>
+          <text class="service-label">我的课程</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="more-features-card">
+      <view class="section-title">更多功能</view>
+      <view class="feature-grid more-features">
+        <view class="feature-item" @tap="handleMoreFeatureClick('invite')">
+          <image
+            class="feature-icon"
+            src="/static/icons/invite.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">邀请有礼</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('service')">
+          <image
+            class="feature-icon"
+            src="/static/icons/customer-service.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">联系客服</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('rewards')">
+          <image
+            class="feature-icon"
+            src="/static/icons/rewards.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">举报有奖</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('address')">
+          <image
+            class="feature-icon"
+            src="/static/icons/location.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">地址管理</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('about')">
+          <image
+            class="feature-icon"
+            src="/static/icons/about.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">关于我们</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('voucher')">
+          <image
+            class="feature-icon"
+            src="/static/icons/voucher.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">领取优惠券</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('comment')">
+          <image
+            class="feature-icon"
+            src="/static/icons/comment.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">评论管理</text>
+        </view>
+      </view>
+    </view>
+    <!-- 课程兑换码弹窗 -->
+    <view
+      v-if="showCouponCodeModal"
+      class="modal-overlay"
+      @tap="showCouponCodeModal = false"
+    >
+      <view class="modal-content" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">课程兑换</text>
+          <view class="close-button" @tap="showCouponCodeModal = false">×</view>
+        </view>
+        <view class="modal-body">
+          <input
+            v-model="couponCode"
+            type="text"
+            placeholder="请输入课程兑换码"
+            class="coupon-input"
+          />
+        </view>
+        <view class="modal-footer">
+          <button class="submit-btn" @tap="handleCouponCodeSubmit">
+            立即兑换
+          </button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
-interface UserInfo {
-  id: string
-  nickname: string
-  avatar?: string
-  level: number
-}
+// Mock data for demonstration
+const appointmentCount = ref(2);
+const courseCount = ref(1);
+const balance = ref("0.00");
+const couponCount = ref(0);
+const favoriteCount = ref(0);
+const instrumentCount = ref(0);
+const showCouponCodeModal = ref(false);
+const couponCode = ref("");
 
-interface Stat {
-  label: string
-  value: number | string
-}
-
-interface Feature {
-  id: number
-  name: string
-  icon: string
-  badge?: string
-  action: string
-}
-
-interface FeatureGroup {
-  title: string
-  features: Feature[]
-}
-
-const userInfo = ref<UserInfo>({
-  id: '88888888',
-  nickname: '音乐爱好者',
-  level: 3
-})
-
-const stats: Stat[] = [
-  { label: '优惠券', value: 8 },
-  { label: '收藏', value: 12 },
-  { label: '积分', value: 1280 }
-]
-
-const featureGroups: FeatureGroup[] = [
-  {
-    title: '我的服务',
-    features: [
-      { id: 1, name: '我的预约', icon: '📅', badge: '2', action: 'appointments' },
-      { id: 2, name: '我的收藏', icon: '❤️', action: 'favorites' },
-      { id: 3, name: '历史记录', icon: '⏱️', action: 'history' }
-    ]
-  },
-  {
-    title: '其他服务',
-    features: [
-      { id: 4, name: '帮助中心', icon: '❓', action: 'help' },
-      { id: 5, name: '联系客服', icon: '💬', action: 'contact' },
-      { id: 6, name: '设置', icon: '⚙️', action: 'settings' }
-    ]
+const handleCouponCodeSubmit = () => {
+  if (!couponCode.value) {
+    uni.showToast({
+      title: "请输入兑换码",
+      icon: "none",
+    });
+    return;
   }
-]
-
-const handleEditProfile = () => {
   uni.showToast({
-    title: '编辑资料',
-    icon: 'none'
-  })
-}
-
-const handleFeatureClick = (feature: Feature) => {
+    title: "功能开发中",
+    icon: "none",
+  });
+};
+const handleLogin = () => {
   uni.showToast({
-    title: `点击了${feature.name}`,
-    icon: 'none'
-  })
-}
+    title: "登录功能开发中",
+    icon: "none",
+  });
+};
 
-const handleLogout = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要退出登录吗？',
-    success: (res) => {
-      if (res.confirm) {
-        // TODO: 处理退出登录逻辑
-        uni.showToast({
-          title: '已退出登录',
-          icon: 'success'
-        })
+const handleFeatureClick = (type: string) => {
+  const routes: Record<string, string> = {
+    teaching: "/pages/orders/orders",
+    course: "/pages/orders/orders",
+    coupon: "/pages/coupon/list",
+  };
+
+  const route = routes[type];
+  if (route) {
+    try {
+      if (type === "teaching") {
+        // 对于教员订单，存储教员分类
+        uni.setStorageSync("orderCategory", "teacher");
+        uni.switchTab({ url: route });
+      } else if (type === "course") {
+        // 对于课程订单，存储课程分类
+        uni.setStorageSync("orderCategory", "course");
+        uni.switchTab({ url: route });
+      } else if (type === "coupon") {
+        // 对于课程兑换码，弹出输入框
+        showCouponCodeModal.value = true;
       }
+    } catch {
+      uni.showToast({
+        title: "功能开发中",
+        icon: "none",
+      });
     }
-  })
-}
+  }
+};
+
+const handleMoreFeatureClick = (type: string) => {
+  const routes: Record<string, string> = {
+    invite: "/pages/invite/index",
+    service: "/pages/service/index",
+    rewards: "/pages/rewards/index",
+    address: "/pages/address/address-manage",
+    about: "/pages/about/index",
+    voucher: "/pages/voucher/index",
+    comment: "/pages/comment/index",
+  };
+
+  const route = routes[type];
+  if (route) {
+    try {
+      uni.navigateTo({
+        url: route,
+        fail: () => {
+          uni.showToast({
+            title: "功能开发中",
+            icon: "none",
+          });
+        },
+      });
+    } catch {
+      uni.showToast({
+        title: "功能开发中",
+        icon: "none",
+      });
+    }
+  }
+};
+
+const handleServiceClick = (type: string) => {
+  const routes: Record<string, string> = {
+    appointment: "/pages/appointment/appointment",
+    instrument: "/pages/instrument/index",
+    course: "/pages/course/index",
+  };
+
+  const route = routes[type];
+  if (route) {
+    try {
+      uni.navigateTo({
+        url: route,
+        fail: () => {
+          uni.showToast({
+            title: "功能开发中",
+            icon: "none",
+          });
+        },
+      });
+    } catch {
+      uni.showToast({
+        title: "功能开发中",
+        icon: "none",
+      });
+    }
+  }
+};
 </script>
 
-<style>
-.profile-page {
+<style scoped>
+.profile {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 40rpx;
+  padding: 20rpx;
+  background-color: #ffffff;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
+.modal-content {
+  background-color: #ffffff;
+  width: 80%;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.close-button {
+  font-size: 40rpx;
+  color: #999;
+}
+
+.coupon-input {
+  width: 92%;
+  border: 1px solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.submit-btn {
+  width: 100%;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 32rpx;
+}
 .user-card {
-  background: #ffffff;
-  padding: 40rpx 30rpx;
+  border-radius: 16rpx;
   margin-bottom: 20rpx;
+  overflow: hidden;
+  position: relative;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  margin-bottom: 20rpx;
+  padding: 32rpx;
+  padding-right: 120rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+  position: relative;
+}
+
+.settings-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 32rpx;
+  z-index: 1;
+  font-size: 28rpx;
+  color: #666;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .avatar {
   width: 120rpx;
   height: 120rpx;
   border-radius: 60rpx;
-  margin-right: 30rpx;
+  margin-right: 24rpx;
 }
 
-.user-details {
-  flex: 1;
-}
-
-.name-row {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  margin-bottom: 10rpx;
-}
-
-.username {
-  font-size: 36rpx;
+.nickname {
+  font-size: 32rpx;
   font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
 }
 
-.user-level {
+.uid {
   font-size: 24rpx;
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
-}
-
-.user-id {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.edit-profile {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  font-size: 28rpx;
-  color: #666;
-}
-
-.arrow {
-  margin-left: 10rpx;
   color: #999;
 }
 
 .user-stats {
-  background: #ffffff;
   display: flex;
-  padding: 30rpx 0;
-  margin-bottom: 20rpx;
+  padding: 24rpx 0;
 }
 
 .stat-item {
@@ -231,21 +457,21 @@ const handleLogout = () => {
 }
 
 .stat-item:not(:last-child)::after {
-  content: '';
+  content: "";
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 2rpx;
-  height: 40%;
-  background: #f0f0f0;
+  width: 1rpx;
+  height: 50%;
+  background-color: #f0f0f0;
 }
 
 .stat-value {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10rpx;
+  margin-bottom: 8rpx;
 }
 
 .stat-label {
@@ -253,69 +479,139 @@ const handleLogout = () => {
   color: #999;
 }
 
-.feature-groups {
-  margin-bottom: 40rpx;
-}
-
-.feature-group {
-  background: #ffffff;
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
   margin-bottom: 20rpx;
-}
-
-.group-title {
-  font-size: 28rpx;
-  color: #999;
-  padding: 20rpx 30rpx;
-  border-bottom: 2rpx solid #f5f5f5;
 }
 
 .feature-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 30rpx;
-  border-bottom: 2rpx solid #f5f5f5;
-}
-
-.feature-item:last-child {
-  border-bottom: none;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
-  font-size: 40rpx;
-  margin-right: 20rpx;
+  background: linear-gradient(-30deg, #a1c4fd 0%, #c2e9fb 100%);
+  border-radius: 50rpx;
+  padding: 16rpx;
+  width: 60rpx;
+  height: 60rpx;
+  margin-bottom: 12rpx;
 }
 
-.feature-name {
-  flex: 1;
+.feature-label {
   font-size: 28rpx;
+  color: #333;
 }
 
-.feature-right {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.badge {
-  background: #ff4d4f;
-  color: #ffffff;
-  font-size: 20rpx;
-  padding: 2rpx 12rpx;
-  border-radius: 20rpx;
-}
-
-.logout-button {
-  width: 90%;
-  margin: 0 auto;
-  background: #ffffff;
+.balance {
+  font-size: 28rpx;
   color: #ff4d4f;
-  font-size: 32rpx;
-  padding: 20rpx 0;
-  border-radius: 44rpx;
-  border: none;
+  margin-right: 16rpx;
 }
 
-.logout-button:active {
-  opacity: 0.8;
+.settings-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 20rpx;
+  padding: 0;
+}
+
+.more-features-card {
+  background: #ffffff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  padding: 24rpx;
+  margin: 40rpx 0;
+}
+
+.more-features {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+  padding: 0;
+}
+
+.more-features .feature-item {
+  padding: 16rpx 10rpx;
+  box-shadow: none;
+}
+
+.more-features .feature-icon {
+  background: linear-gradient(-30deg, #a1c4fd 0%, #c2e9fb 100%);
+  width: 60rpx;
+  height: 60rpx;
+  padding: 16rpx;
+}
+
+.more-features .feature-label {
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+
+.my-services-card {
+  background: #ffffff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx;
+  border-radius: 12rpx;
+}
+
+.service-icon-wrapper {
+  position: relative;
+}
+
+.service-icon {
+  background: linear-gradient(-30deg, #a1c4fd 0%, #c2e9fb 100%);
+  border-radius: 50rpx;
+  padding: 16rpx;
+  width: 60rpx;
+  height: 60rpx;
+  margin-bottom: 12rpx;
+}
+
+.service-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #ff4d4f;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 24rpx;
+  width: 35rpx;
+  height: 35rpx;
+  line-height: 35rpx;
+  text-align: center;
+}
+
+.service-label {
+  font-size: 28rpx;
+  color: #333;
 }
 </style>

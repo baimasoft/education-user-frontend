@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/profile/profile",
+    "pages/orders/orders",
+    "pages/nearby/nearby",
+    "pages/teacher/teacher"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "音乐教育",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#ff4d4f",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/teacher/teacher",
+        "text": "教员",
+        "iconPath": "static/tabbar/teacher.png",
+        "selectedIconPath": "static/tabbar/teacher-active.png"
+      },
+      {
+        "pagePath": "pages/nearby/nearby",
+        "text": "附近",
+        "iconPath": "static/tabbar/nearby.png",
+        "selectedIconPath": "static/tabbar/nearby-active.png"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "text": "订单",
+        "iconPath": "static/tabbar/order.png",
+        "selectedIconPath": "static/tabbar/order-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "static/tabbar/user.png",
+        "selectedIconPath": "static/tabbar/user-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}
