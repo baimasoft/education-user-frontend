@@ -31,6 +31,18 @@
       }
     },
     {
+      "path": "pages/nearby/store-register",
+      "style": {
+        "navigationBarTitleText": "门店入驻"
+      }
+    },
+    {
+      "path": "pages/nearby/store-detail",
+      "style": {
+        "navigationBarTitleText": "门店详情"
+      }
+    },
+    {
       "path": "pages/teacher/teacher",
       "style": {
         "navigationBarTitleText": "教员预约"
@@ -40,6 +52,12 @@
       "path": "pages/teacher/teacher-recruit",
       "style": {
         "navigationBarTitleText": "教员招募"
+      }
+    },
+    {
+      "path": "pages/teacher/teacher-detail",
+      "style": {
+        "navigationBarTitleText": "教员详情"
       }
     },
     {
@@ -103,9 +121,11 @@
       }
     },
     {
-      "path": "pages/city/city-select",
+      "path": "pages/common/video-player",
       "style": {
-        "navigationStyle": "custom"
+        "navigationBarTitleText": "视频播放",
+        "navigationBarBackgroundColor": "#000000",
+        "navigationBarTextStyle": "white"
       }
     }
   ],

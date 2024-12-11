@@ -44,40 +44,48 @@
           :key="coach.id"
           class="coach-card"
         >
-          <view class="coach-image">
-            <image
-              :src="coach.avatar || '/static/images/default-teacher.png'"
-              mode="aspectFill"
-              class="avatar-image"
-            ></image>
+          <view @tap="handleTeacherClick(coach)">
+            <view class="coach-card-content">
+              <view class="coach-image">
+                <image
+                  :src="coach.avatar || '/static/images/default-teacher.png'"
+                  mode="aspectFill"
+                  class="avatar-image"
+                />
+              </view>
+              <view class="coach-header">
+                <view class="name-wrapper">
+                  <text class="coach-name">{{ coach.name }}</text>
+                  <text v-if="coach.available" class="service-badge"
+                    >可预约</text
+                  >
+                  <text v-else class="service-no">休息中</text>
+                </view>
+                <text class="distance">{{ coach.distance }}km</text>
+              </view>
+            </view>
+
+            <view class="coach-info">
+              <view class="coach-details">
+                <text
+                  >{{ coach.age }}岁 | 已接单{{ coach.orders }} | 擅长：{{
+                    coach.instruments.join("、")
+                  }}</text
+                >
+                <text class="signature">签名：{{ coach.signature }}</text>
+              </view>
+              <view class="time-tag">最早可约{{ coach.earliestTime }}</view>
+            </view>
           </view>
-          <view class="coach-info">
-            <view class="coach-header">
-              <view class="name-wrapper">
-                <text class="coach-name">{{ coach.name }}</text>
-                <text v-if="coach.available" class="service-badge">可服务</text>
-              </view>
-              <text class="distance">{{ coach.distance }}km</text>
+          <view class="coach-footer">
+            <view class="price">
+              <text class="currency">¥</text>
+              <text class="amount">{{ coach.price.toFixed(2) }}</text>
+              <text class="unit">起/小时</text>
             </view>
-            <view class="coach-details">
-              <text
-                >{{ coach.age }}岁 | 已接单{{ coach.orders }} | 擅长：{{
-                  coach.instruments.join("、")
-                }}</text
-              >
-              <text class="signature">签名：{{ coach.signature }}</text>
-            </view>
-            <view class="time-tag">最早可约{{ coach.earliestTime }}</view>
-            <view class="coach-footer">
-              <view class="price">
-                <text class="currency">¥</text>
-                <text class="amount">{{ coach.price.toFixed(2) }}</text>
-                <text class="unit">起/小时</text>
-              </view>
-              <button class="book-button" @tap="handleBooking(coach)">
-                立即预约
-              </button>
-            </view>
+            <button class="book-button" @tap="handleBooking(coach)">
+              立即预约
+            </button>
           </view>
         </view>
       </template>
@@ -94,71 +102,12 @@
       </view>
     </view>
 
-    <!-- 预约弹窗 -->
-    <view v-if="selectedCoach" class="modal-overlay" @tap="closeModal">
-      <view class="modal-content" @tap.stop>
-        <view class="close-button" @tap="closeModal">×</view>
-        <view class="modal-scroll-content">
-          <view class="coach-profile">
-            <image
-              :src="
-                selectedCoach.avatar || '/static/images/default-teacher.png'
-              "
-              mode="aspectFill"
-              class="coach-avatar"
-            ></image>
-            <view class="profile-info">
-              <text class="coach-name">{{ selectedCoach.name }}</text>
-              <text class="rating">{{ selectedCoach.rating }}分</text>
-            </view>
-          </view>
-
-          <view class="service-list">
-            <view
-              v-for="service in selectedCoach.services"
-              :key="service.id"
-              class="service-item"
-            >
-              <view class="service-info">
-                <text class="service-name">{{ service.name }}</text>
-                <text class="service-duration">{{ service.duration }}</text>
-              </view>
-              <view class="price-section">
-                <view class="price">
-                  <text class="currency">¥</text>
-                  <text class="amount">{{ service.price.toFixed(2) }}</text>
-                </view>
-                <view class="quantity-control">
-                  <button
-                    class="quantity-btn"
-                    :disabled="!quantities[service.id]"
-                    @tap="handleDecrement(service.id)"
-                  >
-                    −
-                  </button>
-                  <text class="quantity">{{
-                    quantities[service.id] || 0
-                  }}</text>
-                  <button
-                    class="quantity-btn"
-                    @tap="handleIncrement(service.id)"
-                  >
-                    +
-                  </button>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <view class="bottom-bar">
-          <view class="total">
-            合计 <text class="total-price">¥{{ totalPrice.toFixed(2) }}</text>
-          </view>
-          <button class="book-button" @tap="handleSubmit">确认预约</button>
-        </view>
-      </view>
-    </view>
+    <!-- 使用预约弹窗组件 -->
+    <booking-popup
+      v-model:visible="showBooking"
+      :coach="selectedCoach"
+      @submit="handleBookingSubmit"
+    />
 
     <!-- 城市选择器 -->
     <CityPicker v-model:visible="showCityPicker" @select="handleCityChange" />
@@ -169,6 +118,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useCityStore } from "@/stores/city";
 import CityPicker from "@/components/CityPicker.vue";
+import { useTeacherStore } from "@/stores/teacher";
+import BookingPopup from "@/components/booking-popup.vue";
 
 interface Service {
   id: number;
@@ -191,10 +142,14 @@ interface Coach {
   services?: Service[];
   city: string;
   earliestTime: string;
-  instruments: string[]; // 添加分类标签
+  instruments: string[];
+  address: string;
+  introduction: string;
+  storeid?: number;
 }
 
 const cityStore = useCityStore();
+const teacherStore = useTeacherStore();
 
 const selectedTab = ref("推荐教员");
 const selectedCoach = ref<Coach | null>(null);
@@ -231,6 +186,8 @@ const coaches = ref<Coach[]>([
       { id: 1, name: "钢琴体验课", duration: "45分钟", price: 99 },
       { id: 2, name: "钢琴正式课", duration: "60分钟", price: 280 },
     ],
+    address: "广东省广州市天河路",
+    introduction: "",
   },
   {
     id: 2,
@@ -250,6 +207,8 @@ const coaches = ref<Coach[]>([
       { id: 3, name: "小提琴体验课", duration: "45分钟", price: 129 },
       { id: 4, name: "小提琴正式课", duration: "60分钟", price: 320 },
     ],
+    address: "广东省深圳市南山区",
+    introduction: "",
   },
   {
     id: 3,
@@ -263,12 +222,14 @@ const coaches = ref<Coach[]>([
     price: 300,
     city: "广州市",
     earliestTime: "明天",
-    instruments: ["古筝"],
+    instruments: ["古筝", "小提琴", "钢琴"],
     avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
     services: [
       { id: 5, name: "古筝体验课", duration: "45分钟", price: 119 },
       { id: 6, name: "古筝正式课", duration: "60分钟", price: 300 },
     ],
+    address: "广东省广州市白云区",
+    introduction: "",
   },
   {
     id: 4,
@@ -288,6 +249,8 @@ const coaches = ref<Coach[]>([
       { id: 7, name: "吉他体验课", duration: "45分钟", price: 89 },
       { id: 8, name: "吉他正式课", duration: "60分钟", price: 260 },
     ],
+    address: "广东省广州市白云区",
+    introduction: "",
   },
   {
     id: 5,
@@ -306,28 +269,41 @@ const coaches = ref<Coach[]>([
       { id: 9, name: "架子鼓体验课", duration: "45分钟", price: 139 },
       { id: 10, name: "架子鼓正式课", duration: "60分钟", price: 350 },
     ],
+    address: "广东省广州市南沙区",
+    introduction:
+      "2017级星海音乐学院现代音乐与戏剧学院电子键盘专业学生;\n" +
+      "入选星海音乐学院\n" +
+      "优秀人才培养计划\n" +
+      "亚太电子键盘协会会员\n" +
+      "2017年考入星海音乐学院，跟随谢及老师和王稔仪老师进行更专业化的学习\n" +
+      "具备良好的音乐理论基础，在编曲和作曲方面有较深入的学习和积累，有扎实的理论基础和良好的执行能力\n" +
+      "2021年加入到玖月音乐教育进行执教活动\n" +
+      "主要奖项:\n" +
+      "2017年荣获星海音乐学院" +
+      "笃学奖\n",
   },
 ]);
 
 // 根据当前城市和分类筛选教员
 const filteredCoaches = computed(() => {
   let filtered = coaches.value;
-
   // 先按城市筛选
-  if (cityStore.currentCity) {
+  if (cityStore.currentCity?.name) {
     filtered = filtered.filter(
       (coach) => coach.city === cityStore.currentCity?.name
     );
   }
   // 按搜索关键词筛选
   const keyword = searchQuery.value.trim().toLowerCase();
-  filtered = coaches.value.filter(
-    (coaches) =>
-      coaches.name.toLowerCase().includes(keyword) ||
-      coaches.instruments.some((instrument) =>
-        instrument.toLowerCase().includes(keyword)
-      )
-  );
+  if (keyword) {
+    filtered = filtered.filter(
+      (coach) =>
+        coach.name.toLowerCase().includes(keyword) ||
+        coach.instruments.some((instrument) =>
+          instrument.toLowerCase().includes(keyword)
+        )
+    );
+  }
 
   // 如果是推荐教员，按评分排序
   if (selectedTab.value === "推荐教员") {
@@ -353,33 +329,25 @@ const setSelectedTab = (tab: string) => {
   selectedTab.value = tab;
 };
 
+const showBooking = ref(false);
+
 const handleBooking = (coach: Coach) => {
-  selectedCoach.value = coach;
-  quantities.value = {};
-};
-
-const closeModal = () => {
-  selectedCoach.value = null;
-  quantities.value = {};
-};
-
-const handleDecrement = (serviceId: number) => {
-  if (quantities.value[serviceId] > 0) {
-    quantities.value[serviceId]--;
+  if (!coach.available) {
+    uni.showToast({
+      title: "该教员暂不提供服务",
+      icon: "none",
+    });
+    return;
   }
+  selectedCoach.value = coach;
+  showBooking.value = true;
 };
 
-const handleIncrement = (serviceId: number) => {
-  quantities.value[serviceId] = (quantities.value[serviceId] || 0) + 1;
-};
-
-const handleSubmit = () => {
-  // TODO: 处理提交预约
+const handleBookingSubmit = () => {
   uni.showToast({
     title: "预约成功",
     icon: "success",
   });
-  closeModal();
 };
 
 // 城市选择相关
@@ -388,6 +356,11 @@ const showCityPicker = ref(false);
 const handleCityChange = (cityCode: string) => {
   cityStore.setCurrentCity(cityCode);
   showCityPicker.value = false;
+  // 可以添加切换城市后的提示
+  uni.showToast({
+    title: `已切换到${cityStore.currentCity?.name}`,
+    icon: "none",
+  });
 };
 // 搜索关键词
 const searchQuery = ref("");
@@ -398,6 +371,14 @@ const performSearch = () => {
 onMounted(() => {
   cityStore.initCurrentCity();
 });
+
+// 处理教员点击
+const handleTeacherClick = (teacher: Coach) => {
+  teacherStore.updateTeacher(teacher);
+  uni.navigateTo({
+    url: `/pages/teacher/teacher-detail?id=${teacher.id}`,
+  });
+};
 </script>
 
 <style>
@@ -525,8 +506,13 @@ onMounted(() => {
   padding: 20rpx;
   border-radius: 12rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  display: block;
 }
-
+.coach-card-content {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
 .coach-image {
   position: relative;
   width: 120rpx;
@@ -551,6 +537,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10rpx;
+  width: 80%;
 }
 
 .name-wrapper {
@@ -569,6 +556,13 @@ onMounted(() => {
   font-size: 20rpx;
   color: #ff4d4f;
   background: rgba(255, 77, 79, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+}
+.service-no {
+  font-size: 20rpx;
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
   padding: 4rpx 12rpx;
   border-radius: 12rpx;
 }
@@ -639,145 +633,8 @@ onMounted(() => {
   padding: 8rpx 24rpx;
   border-radius: 24rpx;
   border: none;
-  line-height: 1.4;
+  line-height: 1.5;
   margin-right: 0;
-}
-
-/* 弹窗样式 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-}
-
-.modal-content {
-  width: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  background: #ffffff;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
-}
-
-.modal-scroll-content {
-  padding: 40rpx;
-  overflow-y: auto;
-}
-
-.close-button {
-  display: block;
-  position: absolute;
-  right: 20rpx;
-  top: 20rpx;
-  background: none;
-  border: none;
-  font-size: 48rpx;
-  color: #666;
-  padding: 20rpx;
-  line-height: 1;
-}
-
-.coach-profile {
-  display: flex;
-  align-items: center;
-  gap: 30rpx;
-  margin-bottom: 40rpx;
-}
-
-.coach-avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 60rpx;
-}
-
-.service-list {
-  border-top: 16rpx solid #f5f5f5;
-  padding-top: 30rpx;
-}
-
-.service-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 30rpx 0;
-  border-bottom: 2rpx solid #f5f5f5;
-}
-
-.service-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-  display: block;
-}
-
-.service-duration {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.price-section {
-  display: flex;
-  align-items: center;
-  gap: 30rpx;
-}
-
-.quantity-control {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.quantity-btn {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 24rpx;
-  border: 2rpx solid #ff4d4f;
-  background: #ffffff;
-  color: #ff4d4f;
-  font-size: 32rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  line-height: 1;
-}
-
-.quantity-btn:disabled {
-  border-color: #ccc;
-  color: #ccc;
-}
-
-.quantity {
-  font-size: 32rpx;
-  min-width: 40rpx;
-  text-align: center;
-}
-
-.bottom-bar {
-  flex-shrink: 0;
-  padding: 20rpx 40rpx;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 2rpx solid #f0f0f0;
-}
-
-.total {
-  font-size: 28rpx;
-}
-
-.total-price {
-  color: #ff4d4f;
-  font-size: 36rpx;
-  font-weight: bold;
 }
 
 .empty-state {

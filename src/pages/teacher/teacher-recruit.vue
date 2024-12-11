@@ -15,7 +15,7 @@
     <view class="form-container">
       <!-- 头像上传 -->
       <view class="form-item avatar-upload">
-        <text class="form-label">头像</text>
+        <text class="form-label">* 头像</text>
         <view class="avatar-box" @tap="chooseImage">
           <image
             v-if="formData.avatar"
@@ -29,7 +29,7 @@
 
       <!-- 姓名输入 -->
       <view class="form-item">
-        <text class="form-label">姓名</text>
+        <text class="form-label">* 姓名</text>
         <input
           type="text"
           v-model="formData.name"
@@ -38,9 +38,9 @@
         />
       </view>
 
-      <!-- 性别选择 -->
+      <!-- 性别���择 -->
       <view class="form-item gender-select">
-        <text class="form-label">性别</text>
+        <text class="form-label">* 性别</text>
         <radio-group @change="handleGenderChange">
           <label class="radio-label">
             <radio value="male" :checked="formData.gender === 'male'" />
@@ -55,7 +55,7 @@
 
       <!-- 年龄输入 -->
       <view class="form-item">
-        <text class="form-label">年龄</text>
+        <text class="form-label">* 年龄</text>
         <input
           type="number"
           v-model="formData.age"
@@ -66,7 +66,7 @@
 
       <!-- 手机号输入 -->
       <view class="form-item">
-        <text class="form-label">手机号</text>
+        <text class="form-label">* 手机号</text>
         <input
           type="number"
           v-model="formData.phone"
@@ -77,12 +77,14 @@
       </view>
 
       <!-- 城市选择 -->
-      <view class="form-item city-select" @tap="showCitySelector">
-        <text class="form-label">意向合作城市</text>
-        <text class="city-placeholder">
-          {{ formData.city || "全国城市" }}
-          <text class="arrow">></text>
-        </text>
+      <view class="form-item">
+        <text class="form-label">* 意向合作城市</text>
+        <picker mode="region" @change="handleCityChange" class="picker">
+          <view class="picker-value">
+            {{ formData.city || "请选择意向城市" }}
+            <text class="arrow">></text>
+          </view>
+        </picker>
       </view>
     </view>
 
@@ -144,11 +146,9 @@ const handleGenderChange = (e: any) => {
   formData.gender = e.detail.value;
 };
 
-// 显示城市选择器
-const showCitySelector = () => {
-  uni.navigateTo({
-    url: "/pages/city/city-select",
-  });
+// 添加城市选择处理方法
+const handleCityChange = (e: any) => {
+  formData.city = e.detail.value.join(" ");
 };
 
 // 显示协议
@@ -188,6 +188,10 @@ const handleSubmit = () => {
     uni.showToast({ title: "请输入手机号", icon: "none" });
     return;
   }
+  if (!/^1\d{10}$/.test(formData.phone)) {
+    uni.showToast({ title: "请输入正确的手机号", icon: "none" });
+    return;
+  }
   if (!formData.city) {
     uni.showToast({ title: "请选择意向城市", icon: "none" });
     return;
@@ -197,23 +201,12 @@ const handleSubmit = () => {
     return;
   }
   // TODO: 提交表单数据到服务器
-  //   console.log("提交表单:", formData);
+  console.log("提交表单:", formData);
   uni.showToast({
     title: "功能开发中",
     icon: "none",
   });
 };
-
-// 监听城市选择
-onMounted(() => {
-  uni.$on("citySelected", (city: any) => {
-    formData.city = city.name;
-  });
-});
-
-onUnmounted(() => {
-  uni.$off("citySelected");
-});
 </script>
 
 <style scoped>
@@ -321,7 +314,7 @@ input {
   height: 88rpx;
   line-height: 88rpx;
   text-align: center;
-  background: linear-gradient(to right, #ff9a9e, #ff6b6b);
+  background: linear-gradient(to right, #ff4d4f, #ff7875);
   color: #fff;
   border-radius: 44rpx;
   font-size: 32rpx;
@@ -339,5 +332,25 @@ input {
 
 .agreement .link {
   color: #007aff;
+}
+
+.picker {
+  width: 100%;
+  margin-top: 10rpx;
+}
+
+.picker-value {
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+  color: #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.arrow {
+  color: #999;
+  font-size: 24rpx;
 }
 </style>

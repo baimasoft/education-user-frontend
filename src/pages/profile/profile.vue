@@ -38,29 +38,29 @@
     </view>
 
     <view class="feature-grid">
-      <view class="feature-item" @tap="handleFeatureClick('teaching')">
+      <view class="feature-item" @tap="handleServiceClick('appointment')">
         <image
           class="feature-icon"
-          src="/static/icons/teaching.png"
+          src="/static/icons/appointment.png"
           mode="aspectFit"
         ></image>
-        <text class="feature-label">教员订单</text>
+        <text class="feature-label">我的预约</text>
       </view>
-      <view class="feature-item" @tap="handleFeatureClick('course')">
+      <view class="feature-item" @tap="handleServiceClick('instrument')">
+        <image
+          class="feature-icon"
+          src="/static/icons/instrument.png"
+          mode="aspectFit"
+        ></image>
+        <text class="feature-label">课程订单</text>
+      </view>
+      <view class="feature-item" @tap="handleServiceClick('course')">
         <image
           class="feature-icon"
           src="/static/icons/course.png"
           mode="aspectFit"
         ></image>
-        <text class="feature-label">课程订单</text>
-      </view>
-      <view class="feature-item" @tap="handleFeatureClick('coupon')">
-        <image
-          class="feature-icon"
-          src="/static/icons/coupon.png"
-          mode="aspectFit"
-        ></image>
-        <text class="feature-label">课程兑换码</text>
+        <text class="feature-label">我的课程</text>
       </view>
     </view>
 
@@ -68,7 +68,7 @@
       <view class="section-title">我的服务</view>
       <view class="services-grid">
         <view class="service-item" @tap="handleServiceClick('appointment')">
-          <view class="service-icon-wrapper">
+          <!-- <view class="service-icon-wrapper">
             <image
               class="service-icon"
               src="/static/icons/appointment.png"
@@ -78,10 +78,10 @@
               appointmentCount
             }}</text>
           </view>
-          <text class="service-label">我的预约</text>
+          <text class="service-label">我的预约</text> -->
         </view>
         <view class="service-item" @tap="handleServiceClick('instrument')">
-          <view class="service-icon-wrapper">
+          <!-- <view class="service-icon-wrapper">
             <image
               class="service-icon"
               src="/static/icons/instrument.png"
@@ -91,10 +91,10 @@
               instrumentCount
             }}</text>
           </view>
-          <text class="service-label">我的乐器</text>
+          <text class="service-label">我的乐器</text> -->
         </view>
         <view class="service-item" @tap="handleServiceClick('course')">
-          <view class="service-icon-wrapper">
+          <!-- <view class="service-icon-wrapper">
             <image
               class="service-icon"
               src="/static/icons/course.png"
@@ -104,7 +104,7 @@
               courseCount
             }}</text>
           </view>
-          <text class="service-label">我的课程</text>
+          <text class="service-label">我的课程</text> -->
         </view>
       </view>
     </view>
@@ -159,6 +159,14 @@
             mode="aspectFit"
           ></image>
           <text class="feature-label">领取优惠券</text>
+        </view>
+        <view class="feature-item" @tap="handleFeatureClick('coupon')">
+          <image
+            class="feature-icon"
+            src="/static/icons/coupon.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">课程兑换码</text>
         </view>
         <view class="feature-item" @tap="handleMoreFeatureClick('comment')">
           <image

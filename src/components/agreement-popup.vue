@@ -109,7 +109,7 @@ const handleConfirm = () => {
 }
 
 .confirm-btn {
-  background: linear-gradient(to right, #ff6b6b, #ff8585);
+  background: linear-gradient(to right, #ff4d4f, #ff7875);
   color: #fff;
   border: none;
   border-radius: 40rpx;

@@ -23,11 +23,27 @@
       </view>
     </view>
 
+    <!-- 添加排序选项 -->
+    <view class="sort-bar">
+      <text
+        class="sort-item"
+        :class="{ active: sortType === 'distance' }"
+        @tap="handleSort('distance')"
+        >距离最近</text
+      >
+      <text
+        class="sort-item"
+        :class="{ active: sortType === 'rating' }"
+        @tap="handleSort('rating')"
+        >评分最高</text
+      >
+    </view>
+
     <!-- 门店列表 -->
     <view class="store-list">
       <template v-if="filteredStores.length > 0">
         <view
-          v-for="store in filteredStores"
+          v-for="store in sortedStores"
           :key="store.id"
           class="store-item"
           @tap="handleStoreSelect(store)"
@@ -58,8 +74,14 @@
               <text
                 v-for="(feature, index) in store.features"
                 :key="index"
-                class="feature-tag"
+                class="store-tag feature-tag"
                 >{{ feature }}</text
+              >
+              <text
+                v-for="(instrument, index) in store.instruments"
+                :key="index"
+                class="store-tag instrument-tag"
+                >{{ instrument }}</text
               >
             </view>
             <view class="store-footer">
@@ -98,6 +120,10 @@
 import { ref, computed, onMounted } from "vue";
 import { useCityStore } from "@/stores/city";
 import CityPicker from "@/components/CityPicker.vue";
+import { useStoreStore } from "@/stores/store";
+
+const cityStore = useCityStore();
+const storeStore = useStoreStore();
 
 interface Store {
   id: number;
@@ -112,9 +138,10 @@ interface Store {
   image?: string;
   city: string;
   instruments: string[];
+  businessHours: string;
+  phone: string;
 }
 
-const cityStore = useCityStore();
 const showCityPicker = ref(false);
 // 搜索关键词
 const searchQuery = ref("");
@@ -124,7 +151,7 @@ const stores = ref<Store[]>([
     id: 0,
     name: "雀巢音乐东尚城门店",
     status: "营业中",
-    price: "199",
+    price: "189",
     distance: 1.2,
     address: "天河路123号音乐大厦3楼",
     features: ["免服务费", "可预约"],
@@ -133,12 +160,14 @@ const stores = ref<Store[]>([
     orderCount: 1560,
     city: "广州市",
     instruments: ["吉他", "钢琴", "架子鼓"],
+    businessHours: "10:00-23:00",
+    phone: "0571-88888888",
   },
   {
     id: 1,
     name: "音乐空间(天河店)",
     status: "营业中",
-    price: "199",
+    price: "109",
     distance: 0.8,
     address: "天河路123号音乐大厦3楼",
     features: ["免费WiFi", "停车场", "休息区"],
@@ -146,6 +175,8 @@ const stores = ref<Store[]>([
     orderCount: 2890,
     city: "广州市",
     instruments: ["小提琴", "古筝", "电子琴"],
+    businessHours: "10:00-23:00",
+    phone: "0571-88888888",
   },
   {
     id: 2,
@@ -155,10 +186,12 @@ const stores = ref<Store[]>([
     distance: 1.2,
     address: "珠江新城华夏路456号",
     features: ["免费WiFi", "器材租赁", "休息区"],
-    rating: "4.8",
+    rating: "5.0",
     orderCount: 1560,
     city: "广州市",
     instruments: ["架子鼓", "贝斯", "电吉他"],
+    businessHours: "10:00-23:00",
+    phone: "0571-88888888",
   },
 ]);
 
@@ -191,9 +224,9 @@ const handleSearch = () => {
 };
 
 const handleStoreSelect = (store: Store) => {
-  uni.showToast({
-    title: `已选择${store.name}`,
-    icon: "success",
+  storeStore.updateStore(store);
+  uni.navigateTo({
+    url: `/pages/nearby/store-detail?id=${store.id}`,
   });
 };
 
@@ -201,6 +234,26 @@ const handleCityChange = (cityCode: string) => {
   cityStore.setCurrentCity(cityCode);
   showCityPicker.value = false;
 };
+
+// 添加排序类型
+const sortType = ref<"distance" | "rating">("distance");
+
+// 处理排序
+const handleSort = (type: "distance" | "rating") => {
+  sortType.value = type;
+};
+
+// 排序后的门店列表
+const sortedStores = computed(() => {
+  const sorted = [...stores.value];
+  if (sortType.value === "distance") {
+    // 按距离排序（近到远）
+    return sorted.sort((a, b) => Number(a.distance) - Number(b.distance));
+  } else {
+    // 按评分排序（高到低）
+    return sorted.sort((a, b) => Number(b.rating) - Number(a.rating));
+  }
+});
 
 onMounted(() => {
   cityStore.initCurrentCity();
@@ -303,7 +356,7 @@ onMounted(() => {
 .store-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: start;
   margin-bottom: 10rpx;
 }
 .store-status-price {
@@ -348,6 +401,7 @@ onMounted(() => {
 .store-name {
   font-size: 32rpx;
   font-weight: bold;
+  width: 280rpx;
 }
 
 .distance {
@@ -374,13 +428,18 @@ onMounted(() => {
   gap: 10rpx;
   margin-bottom: 10rpx;
 }
-
-.feature-tag {
-  font-size: 20rpx;
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
+.store-tag {
   padding: 4rpx 12rpx;
   border-radius: 20rpx;
+  font-size: 20rpx;
+}
+.feature-tag {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+}
+.instrument-tag {
+  color: #007bff;
+  background: rgba(0, 123, 255, 0.1);
 }
 
 .store-footer {
@@ -431,5 +490,27 @@ onMounted(() => {
 .empty-subtext {
   font-size: 28rpx;
   color: #999;
+}
+
+/* 排序栏样式 */
+.sort-bar {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  background: #fff;
+  margin-bottom: 20rpx;
+}
+
+.sort-item {
+  font-size: 28rpx;
+  color: #666;
+  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
+  background: #f4f4f4;
+}
+
+.sort-item.active {
+  color: #ffffff;
+  background: #007bff;
 }
 </style>

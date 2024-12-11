@@ -98,7 +98,12 @@
       </view>
 
       <view class="store-list" v-if="activeTab === 'stores'">
-        <view class="store-item" v-for="(store, index) in stores" :key="index">
+        <view
+          class="store-item"
+          v-for="(store, index) in sortedStores"
+          :key="index"
+          @tap="handleStoreClick(store)"
+        >
           <view class="store-left">
             <image
               class="store-image"
@@ -124,14 +129,28 @@
             </view>
             <view class="store-tags">
               <text class="tag city">{{ store.city }}</text>
-              <text class="tag free-service">免服务费</text>
-              <text class="tag duration">1小时</text>
+              <text
+                class="tag free-service"
+                v-for="(feature, index) in store.features"
+                :key="index"
+                >{{ feature }}</text
+              >
+              <text
+                class="tag duration"
+                v-for="(instrument, index) in store.instruments"
+                :key="index"
+                >{{ instrument }}</text
+              >
             </view>
             <view class="store-bottom">
               <view class="price-box">
                 <text class="price-symbol">¥</text>
                 <text class="price">{{ store.price }}</text>
                 <text class="unit">/小时</text>
+              </view>
+              <view class="rating">
+                <text class="star">⭐</text>
+                <text>{{ store.rating }}</text>
               </view>
               <view class="distance">
                 <text class="location-icon">📍</text>
@@ -198,7 +217,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useStoreStore } from "@/stores/store";
+
+const storeStore = useStoreStore();
 
 interface Banner {
   image: string;
@@ -216,6 +238,9 @@ interface Store {
   orderCount: number;
   image?: string;
   city: string;
+  instruments: string[];
+  businessHours: string;
+  phone: string;
 }
 
 interface Feature {
@@ -280,10 +305,10 @@ const features = ref<Feature[]>([
   {
     icon: "/static/icons/nearby.png",
     text: "门店入驻",
-    path: "",
+    path: "/pages/nearby/store-register",
   },
   {
-    icon: "/static/icons/inviteadd.png",
+    icon: "/static/icons/invite.png",
     text: "邀请好友",
     path: "",
   },
@@ -299,7 +324,7 @@ const stores = ref<Store[]>([
     id: 0,
     name: "雀巢音乐东尚城门店",
     status: "营业中",
-    price: "199",
+    price: "189",
     distance: 1.2,
     address: "天河路123号音乐大厦3楼",
     features: ["免服务费", "可预约"],
@@ -307,18 +332,24 @@ const stores = ref<Store[]>([
     image: "",
     orderCount: 1560,
     city: "广州市",
+    instruments: ["吉他", "钢琴", "架子鼓"],
+    businessHours: "10:00-23:00",
+    phone: "0571-88888888",
   },
   {
     id: 1,
     name: "音乐空间(天河店)",
     status: "营业中",
-    price: "199",
+    price: "109",
     distance: 0.8,
     address: "天河路123号音乐大厦3楼",
-    features: ["免费WiFi", "停车场", "休息区"],
+    features: ["免费WiFi", "停车场", "休息���"],
     rating: "4.9",
     orderCount: 2890,
     city: "广州市",
+    instruments: ["小提琴", "古筝", "电子琴"],
+    businessHours: "10:00-23:00",
+    phone: "0571-88888888",
   },
   {
     id: 2,
@@ -331,6 +362,9 @@ const stores = ref<Store[]>([
     rating: "4.8",
     orderCount: 1560,
     city: "广州市",
+    instruments: ["架子鼓", "贝斯", "电吉他"],
+    businessHours: "10:00-23:00",
+    phone: "0571-88888888",
   },
 ]);
 const courses = ref<Course[]>([
@@ -357,7 +391,7 @@ const courses = ref<Course[]>([
 ]);
 const handleCategoryCardClick = (type: "nearby" | "course") => {
   // 记录用户点击行为
-  console.log(`用户点击了${type === "nearby" ? "教员" : "课程"}分类卡片`);
+  console.log(`用户���击了${type === "nearby" ? "教员" : "课程"}分类卡片`);
 
   if (type === "nearby") {
     // 跳转到教员页面
@@ -441,6 +475,18 @@ const handleMoreClick = () => {
     });
   }
 };
+
+const handleStoreClick = (store: Store) => {
+  storeStore.updateStore(store);
+  uni.navigateTo({
+    url: `/pages/nearby/store-detail?id=${store.id}`,
+  });
+};
+
+// 按距离排序的门店列表
+const sortedStores = computed(() => {
+  return [...stores.value].sort((a, b) => a.distance - b.distance);
+});
 </script>
 
 <style>
@@ -516,27 +562,25 @@ const handleMoreClick = () => {
 /* 分类卡片样式 */
 .category-cards {
   display: flex;
-  gap: 20rpx;
   padding: 0 20rpx;
-  margin-bottom: 20rpx;
 }
 
 .category-card {
   flex: 1;
   height: 180rpx;
-  border-radius: 12rpx;
   padding: 20rpx;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .nearby-teacher {
-  background: linear-gradient(to right, #ffb199, #ff8c69);
+  background: url("/static/images/screen_item1.png") no-repeat center center;
+  background-size: contain;
 }
 
 .hot-course {
-  background: linear-gradient(to right, #ffe066, #ffd700);
+  background: url("/static/images/screen_item2.png") no-repeat center center;
+  background-size: contain;
 }
 
 .card-content {
@@ -544,27 +588,29 @@ const handleMoreClick = () => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  margin: 0 30rpx;
 }
 
 .card-title {
-  font-size: 32rpx;
+  font-size: 38rpx;
   font-weight: bold;
   color: #333;
 }
 
 .card-subtitle {
   font-size: 24rpx;
-  color: #666;
+  color: #d49b7c;
   margin-top: 8rpx;
 }
 
 .card-button {
-  width: fit-content;
-  padding: 8rpx 24rpx;
-  background: #ffffff;
+  width: auto;
+  text-align: center;
+  padding: 15rpx 24rpx;
+  background: linear-gradient(to right, #ff4d4f, #ff7875);
+  color: #ffffff;
   border-radius: 30rpx;
   font-size: 24rpx;
-  color: #333;
   margin-top: 16rpx;
 }
 
@@ -601,12 +647,8 @@ const handleMoreClick = () => {
 }
 
 .section {
-  margin: 20rpx;
   padding: 24rpx;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
 }
-
 .section-header {
   padding: 0 0 24rpx;
   display: flex;
@@ -635,6 +677,12 @@ const handleMoreClick = () => {
   margin-bottom: 20rpx;
   padding: 20rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.store-item:active {
+  opacity: 0.8;
+  transform: scale(0.98);
 }
 
 .store-left {
@@ -698,13 +746,14 @@ const handleMoreClick = () => {
 
 .store-tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 12rpx;
   margin: 12rpx 0;
 }
 
 .tag {
   padding: 4rpx 12rpx;
-  border-radius: 4rpx;
+  border-radius: 20rpx;
   font-size: 22rpx;
 }
 
@@ -715,19 +764,30 @@ const handleMoreClick = () => {
 }
 
 .free-service {
-  background: #fff1f0;
+  background: rgba(255, 77, 79, 0.1);
   color: #ff4d4f;
 }
 
 .duration {
-  background: #f5f5f5;
-  color: #666;
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff;
 }
 
 .store-bottom {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.star {
+  color: #ffd700;
 }
 
 .price-box {
