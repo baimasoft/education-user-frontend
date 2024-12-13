@@ -15,39 +15,58 @@
 
     <!-- 订单列表 -->
     <view class="order-list">
-      <view v-for="order in filteredOrders" :key="order.id" class="order-item">
+      <view
+        v-for="order in filteredOrders"
+        :key="order.id"
+        class="order-item"
+        @tap="handleOrderClick(order)"
+      >
         <view class="order-header">
-          <view class="store-info">
-            <text class="store-name">{{ order.storeName }}</text>
-            <text class="arrow">></text>
+          <view class="teacher-info">
+            <image
+              class="teacher-avatar"
+              :src="order.teacherAvatar || '/static/images/default-teacher.png'"
+              mode="aspectFill"
+            />
+            <view class="teacher-detail">
+              <text class="teacher-name">{{ order.teacherName }}</text>
+              <text class="teacher-title">{{ order.teacherTitle }}</text>
+            </view>
           </view>
           <text class="order-status" :class="order.status">{{
-            order.statusText
+            getStatusText(order.status)
           }}</text>
         </view>
 
         <view class="order-content">
-          <image
-            class="service-image"
-            :src="order.image || '/static/images/default-orders.png'"
-            mode="aspectFill"
-          />
-          <view class="service-info">
-            <view class="service-name">{{ order.serviceName }}</view>
-            <view class="service-time">{{ order.serviceTime }}</view>
-            <view class="price-info">
-              <text class="price">¥{{ order.price.toFixed(2) }}</text>
-              <text class="count">x{{ order.count }}</text>
+          <view class="service-summary">
+            <view class="service-list">
+              <text
+                v-for="(service, index) in sortedServices(order).slice(0, 2)"
+                :key="service.id"
+                class="service-item"
+              >
+                {{ service.name }} x{{ service.quantity }}
+                <text v-if="order.status === 'confirmed'" class="remaining">
+                  (剩余{{ service.remainingQuantity }}次)
+                </text>
+              </text>
+              <text v-if="order.services.length > 2" class="more-services">
+                等{{ order.services.length }}个服务
+              </text>
+            </view>
+            <view class="booking-info">
+              <text class="booking-time"
+                >预约时间：{{ order.bookingTime }}</text
+              >
+              <text class="address">地址：{{ order.address }}</text>
             </view>
           </view>
         </view>
 
         <view class="order-footer">
           <view class="total">
-            共{{ order.count }}件 合计
-            <text class="total-price"
-              >¥{{ (order.price * order.count).toFixed(2) }}</text
-            >
+            合计 <text class="total-price">¥{{ order.amount.toFixed(2) }}</text>
           </view>
           <view class="action-buttons">
             <button
@@ -55,7 +74,7 @@
               :key="action.type"
               class="action-button"
               :class="action.type"
-              @tap="handleOrderAction(action.type, order)"
+              @tap.stop="handleOrderAction(action.type, order)"
             >
               {{ action.text }}
             </button>
@@ -77,34 +96,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { onShow } from "@dcloudio/uni-app";
+import { useOrderStore, type Order } from "@/stores/order";
 
-onShow(() => {
-  const category = uni.getStorageSync("orderCategory");
-  if (category) {
-    currentTab.value = category;
-    // 清除存储的分类，避免重复设置
-    uni.removeStorageSync("orderCategory");
+const orderStore = useOrderStore();
+const orders = ref<Order[]>([]);
+
+// 获取订单列表
+const getOrderList = () => {
+  // 获取所有本地存储的订单
+  const storage = uni.getStorageInfoSync();
+  const orderKeys = storage.keys.filter((key) => key.startsWith("order_"));
+
+  if (orderKeys.length > 0) {
+    // 从本地存储获取订单数据
+    const localOrders = orderKeys.map((key) => {
+      const orderData = uni.getStorageSync(key);
+      return JSON.parse(orderData);
+    });
+
+    // 按创建时间倒序排序
+    orders.value = localOrders.sort((a, b) => {
+      // 将日期时间格式转换为 iOS 支持的格式
+      const formatDateTime = (dateTimeStr: string) => {
+        // 将 "yyyy-MM-dd HH:mm" 转换为 "yyyy-MM-ddTHH:mm:00"
+        return dateTimeStr.replace(" ", "T") + ":00";
+      };
+
+      return (
+        new Date(formatDateTime(b.createTime)).getTime() -
+        new Date(formatDateTime(a.createTime)).getTime()
+      );
+    });
+  } else {
+    // 如果本地没有数据，从 store 获取
+    orders.value = orderStore.getOrdersByStatus();
+
+    // 将订单数据存入本地
+    orders.value.forEach((order: Order) => {
+      uni.setStorageSync(`order_${order.id}`, JSON.stringify(order));
+    });
   }
-});
+};
+
 interface Tab {
   label: string;
   value: string;
-}
-
-interface Order {
-  id: number;
-  storeName: string;
-  status: string;
-  statusText: string;
-  serviceName: string;
-  serviceTime: string;
-  price: number;
-  count: number;
-  image?: string;
-  category: string;
-  categoryText: string;
 }
 
 interface OrderAction {
@@ -114,101 +152,52 @@ interface OrderAction {
 
 const tabs: Tab[] = [
   { label: "全部", value: "all" },
-  { label: "待付款", value: "unpaid" },
-  { label: "待使用", value: "unused" },
-  { label: "门店", value: "store" },
-  { label: "教员", value: "teacher" },
-  { label: "课程", value: "course" },
-  { label: "乐器租赁", value: "instrument_rental" },
-  { label: "乐器购买", value: "instrument_purchase" },
-  { label: "乐室预约", value: "music_room_reservation" },
+  { label: "待付款", value: "pending" },
+  { label: "待使用", value: "confirmed" },
+  { label: "已完成", value: "completed" },
+  { label: "已取消", value: "cancelled" },
+  { label: "已退款", value: "refunded" },
+  // { label: "教员", value: "teacher" },
+  // { label: "课程", value: "course" },
+  // { label: "乐器租赁", value: "instrument_rental" },
+  // { label: "乐器购买", value: "instrument_purchase" },
+  // { label: "乐室预约", value: "music_room_reservation" },
 ];
 
 const currentTab = ref("all");
 
-const orders = ref<Order[]>([
-  {
-    id: 1,
-    storeName: "音乐空间(天河店)",
-    status: "unused",
-    statusText: "待使用",
-    serviceName: "吉他教学课程",
-    serviceTime: "2024-01-20 14:00-15:00",
-    price: 299.0,
-    count: 1,
-    category: "course",
-    categoryText: "课程",
-  },
-  {
-    id: 2,
-    storeName: "乐器中心(珠江新城店)",
-    status: "completed",
-    statusText: "已完成",
-    serviceName: "钢琴教学课程",
-    serviceTime: "2024-01-18 10:00-11:00",
-    price: 399.0,
-    count: 2,
-    category: "teacher",
-    categoryText: "教员",
-  },
-  {
-    id: 3,
-    storeName: "音乐工作室",
-    status: "unpaid",
-    statusText: "待付款",
-    serviceName: "乐器租赁 - 小提琴",
-    serviceTime: "2024-02-01 至 2024-02-28",
-    price: 500.0,
-    count: 1,
-    category: "instrument_rental",
-    categoryText: "乐器租赁",
-  },
-  {
-    id: 4,
-    storeName: "乐器商城",
-    status: "completed",
-    statusText: "已完成",
-    serviceName: "电吉他",
-    serviceTime: "2024-01-15",
-    price: 3999.0,
-    count: 1,
-    category: "instrument_purchase",
-    categoryText: "乐器购买",
-  },
-  {
-    id: 5,
-    storeName: "音乐中心",
-    status: "unused",
-    statusText: "待使用",
-    serviceName: "乐室预约 - 录音室",
-    serviceTime: "2024-02-10 10:00-14:00",
-    price: 200.0,
-    count: 1,
-    category: "music_room_reservation",
-    categoryText: "乐室预约",
-  },
-  {
-    id: 6,
-    storeName: "音乐培训学校",
-    status: "unused",
-    statusText: "待使用",
-    serviceName: "架子鼓培训课程",
-    serviceTime: "2024-02-05 16:00-17:00",
-    price: 350.0,
-    count: 1,
-    category: "store",
-    categoryText: "门店",
-  },
-]);
-
 const filteredOrders = computed(() => {
   if (currentTab.value === "all") {
-    return orders.value;
+    return [...orders.value].sort((a, b) => {
+      // 待使用的订单优先显示剩余次数多的
+      if (a.status === "confirmed" && b.status === "confirmed") {
+        const aRemaining = getTotalRemaining(a);
+        const bRemaining = getTotalRemaining(b);
+        return bRemaining - aRemaining;
+      }
+      // 其他情况按时间排序
+      return (
+        new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      );
+    });
   }
-  return orders.value.filter(
-    (order) =>
-      order.status === currentTab.value || order.category === currentTab.value
-  );
+  return orders.value
+    .filter(
+      (order: Order) =>
+        order.status === currentTab.value || order.category === currentTab.value
+    )
+    .sort((a, b) => {
+      // 在"待使用"标签页下按剩余次数排序
+      if (currentTab.value === "confirmed") {
+        const aRemaining = getTotalRemaining(a);
+        const bRemaining = getTotalRemaining(b);
+        return bRemaining - aRemaining;
+      }
+      // 其他标签页按时间排序
+      return (
+        new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      );
+    });
 });
 
 const handleTabChange = (tab: string) => {
@@ -217,33 +206,169 @@ const handleTabChange = (tab: string) => {
 
 const getOrderActions = (order: Order): OrderAction[] => {
   const actions: OrderAction[] = [];
-
   switch (order.status) {
-    case "unpaid":
+    case "pending":
       actions.push({ type: "primary", text: "立即付款" });
       actions.push({ type: "default", text: "取消订单" });
       break;
-    case "unused":
+    case "confirmed":
       actions.push({ type: "primary", text: "查看详情" });
       actions.push({ type: "default", text: "申请退款" });
       break;
     case "completed":
       actions.push({ type: "primary", text: "再次预约" });
-      actions.push({ type: "default", text: "评价" });
+      actions.push({ type: "default", text: "删除订单" });
       break;
     case "cancelled":
-      actions.push({ type: "primary", text: "删除订单" });
+    case "refunded":
+      actions.push({ type: "default", text: "删除订单" });
       break;
   }
-
   return actions;
 };
 
 const handleOrderAction = (actionType: string, order: Order) => {
-  // TODO: 处理订单操作
-  uni.showToast({
-    title: `${actionType} 订单${order.id}`,
-    icon: "none",
+  switch (actionType) {
+    case "primary":
+      if (order.status === "confirmed") {
+        // 查看详情
+        uni.redirectTo({
+          url: `/pages/orders/order-detail?id=${order.id}`,
+        });
+      } else if (order.status === "pending") {
+        // 立即付款
+        uni.redirectTo({
+          url: `/pages/orders/order-detail?id=${order.id}`,
+        });
+      } else if (order.status === "completed") {
+        // 再次预约
+        uni.navigateTo({
+          url: `/pages/teacher/teacher-detail?id=${order.teacherId}`,
+        });
+      }
+      break;
+    case "default":
+      if (order.status === "confirmed") {
+        // 申请退款
+        uni.showModal({
+          title: "申请退款",
+          content: "确定要申请退款吗？",
+          success: (res) => {
+            if (res.confirm) {
+              orderStore.refundOrder(order.id);
+              // 更新本地存储
+              uni.setStorageSync(
+                `order_${order.id}`,
+                JSON.stringify({
+                  ...order,
+                  status: "refunded",
+                })
+              );
+              // 刷新订单列表
+              getOrderList();
+              uni.showToast({
+                title: "退款申请已提交",
+                icon: "success",
+              });
+            }
+          },
+        });
+      } else if (order.status === "pending") {
+        // 取消订单
+        uni.showModal({
+          title: "取消订单",
+          content: "确定要取消订单吗？",
+          success: (res) => {
+            if (res.confirm) {
+              orderStore.cancelOrder(order.id);
+              // 更新本地存储
+              uni.setStorageSync(
+                `order_${order.id}`,
+                JSON.stringify({
+                  ...order,
+                  status: "cancelled",
+                })
+              );
+              // 刷新订单列表
+              getOrderList();
+              uni.showToast({
+                title: "订单已取消",
+                icon: "success",
+              });
+            }
+          },
+        });
+      } else {
+        uni.showModal({
+          title: "删除订单",
+          content: "确定要删除订单吗？",
+          success: (res) => {
+            if (res.confirm) {
+              // 删除本地存储
+              uni.removeStorageSync(`order_${order.id}`);
+              // 刷新订单列表
+              getOrderList();
+              uni.showToast({
+                title: "订单已删除",
+                icon: "success",
+              });
+            }
+          },
+        });
+      }
+      break;
+  }
+};
+
+const handleOrderClick = (order: Order) => {
+  // 点击整个订单也跳转到详情页
+  uni.navigateTo({
+    url: `/pages/orders/order-detail?id=${order.id}`,
+  });
+};
+
+// 页面显示时刷新订单列表
+onShow(() => {
+  getOrderList();
+  const category = uni.getStorageSync("orderCategory");
+  if (category) {
+    currentTab.value = category;
+    uni.removeStorageSync("orderCategory");
+  }
+});
+
+// 获取状态文本
+const getStatusText = (status: Order["status"]) => {
+  const statusMap = {
+    pending: "待支付",
+    confirmed: "待使用",
+    completed: "已完成",
+    cancelled: "已取消",
+    refunded: "已退款",
+  };
+  return statusMap[status];
+};
+
+// 计算订单总数量
+const getTotalQuantity = (order: Order) => {
+  return order.services.reduce((sum, service) => sum + service.quantity, 0);
+};
+
+// 添加计算订单服务总剩余次数的函数
+const getTotalRemaining = (order: Order) => {
+  return order.services.reduce(
+    (sum, service) => sum + (service.remainingQuantity || 0),
+    0
+  );
+};
+
+// 对订单内的服务按剩余数量排序
+const sortedServices = (order: Order) => {
+  if (order.status !== "confirmed") {
+    return order.services;
+  }
+  return [...order.services].sort((a, b) => {
+    return (b.remainingQuantity || 0) - (a.remainingQuantity || 0);
   });
 };
 </script>
@@ -297,85 +422,54 @@ const handleOrderAction = (actionType: string, order: Order) => {
   border-bottom: 2rpx solid #f5f5f5;
 }
 
-.store-info {
+.teacher-info {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  gap: 12rpx;
 }
 
-.store-name {
+.teacher-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 30rpx;
+}
+
+.teacher-name {
   font-size: 28rpx;
   font-weight: bold;
+  color: #333;
 }
 
-.arrow {
-  color: #999;
+.teacher-title {
   font-size: 24rpx;
+  color: #666;
 }
 
 .order-status {
   font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
 }
 
-.order-status.unpaid {
+.order-status.pending {
   color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
 }
 
-.order-status.unused {
+.order-status.confirmed {
   color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
 }
 
 .order-status.completed {
-  color: #999;
-}
-
-.order-status.cancelled {
-  color: #999;
-}
-
-.order-content {
-  display: flex;
-  padding: 20rpx 0;
-  border-bottom: 2rpx solid #f5f5f5;
-}
-
-.service-image {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 8rpx;
-  margin-right: 20rpx;
-}
-
-.service-info {
-  flex: 1;
-}
-
-.service-name {
-  font-size: 28rpx;
-  margin-bottom: 10rpx;
-}
-
-.service-time {
-  font-size: 24rpx;
   color: #666;
-  margin-bottom: 10rpx;
+  background: #f5f5f5;
 }
 
-.price-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.price {
-  font-size: 32rpx;
-  color: #ff4d4f;
-  font-weight: bold;
-}
-
-.count {
-  font-size: 24rpx;
+.order-status.cancelled,
+.order-status.refunded {
   color: #999;
+  background: #f5f5f5;
 }
 
 .order-footer {
@@ -405,10 +499,10 @@ const handleOrderAction = (actionType: string, order: Order) => {
   background: linear-gradient(to right, #ff4d4f, #ff7875);
   color: #ffffff;
   font-size: 24rpx;
-  padding: 8rpx 24rpx;
+  padding: 15rpx 24rpx;
   border-radius: 24rpx;
   border: none;
-  line-height: 1.4;
+  line-height: 24rpx;
   margin-right: 0;
 }
 
@@ -428,12 +522,13 @@ const handleOrderAction = (actionType: string, order: Order) => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
   width: 200rpx;
+  height: 200rpx;
   font-size: 80rpx;
   margin-bottom: 20rpx;
 }
@@ -447,5 +542,67 @@ const handleOrderAction = (actionType: string, order: Order) => {
 .empty-subtext {
   font-size: 28rpx;
   color: #999;
+}
+
+.booking-time {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+.teacher-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.order-content {
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid #f5f5f5;
+}
+
+.service-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.service-item {
+  font-size: 28rpx;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.more-services {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.remaining {
+  font-size: 24rpx;
+  color: #52c41a;
+  margin-left: 8rpx;
+}
+
+.booking-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.booking-time,
+.address {
+  font-size: 24rpx;
+  color: #666;
 }
 </style>

@@ -1,24 +1,22 @@
 <template>
   <view class="agreement-popup" v-if="visible">
-    <view class="mask" @tap="handleClose"></view>
-    <view class="content">
-      <view class="header">
-        <text class="title">{{ title }}</text>
-        <text class="close" @tap="handleClose">×</text>
+    <view class="popup-mask" @tap="handleClose"></view>
+    <view class="popup-content">
+      <view class="popup-header">
+        <text class="popup-title">{{ title }}</text>
+        <text class="close-btn" @tap="handleClose">×</text>
       </view>
-      <scroll-view class="body" scroll-y style="width: 92%">
+      <scroll-view class="body" scroll-y style="width: 100%; overflow-y: auto">
         <rich-text :nodes="content"></rich-text>
       </scroll-view>
-      <view class="footer">
-        <button class="confirm-btn" @tap="handleConfirm">我已阅读并同意</button>
+      <view class="popup-footer">
+        <button class="confirm-btn" @tap="handleConfirm">我知道了</button>
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -36,17 +34,17 @@ const props = defineProps({
 
 const emit = defineEmits(["update:visible", "confirm"]);
 
-const handleClose = () => {
-  emit("update:visible", false);
-};
-
 const handleConfirm = () => {
   emit("confirm");
   handleClose();
 };
+
+const handleClose = () => {
+  emit("update:visible", false);
+};
 </script>
 
-<style>
+<style scoped>
 .agreement-popup {
   position: fixed;
   top: 0;
@@ -56,67 +54,68 @@ const handleConfirm = () => {
   z-index: 999;
 }
 
-.mask {
+.popup-mask {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.6);
 }
 
-.content {
+.popup-content {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%;
-  max-width: 600rpx;
-  background: #fff;
-  border-radius: 20rpx;
-  overflow: hidden;
-}
-
-.header {
-  position: relative;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 24rpx 24rpx 0 0;
   padding: 30rpx;
-  text-align: center;
-  border-bottom: 1rpx solid #eee;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.title {
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20rpx;
+}
+
+.popup-title {
   font-size: 32rpx;
   font-weight: bold;
+  color: #333;
 }
 
-.close {
-  position: absolute;
-  right: 30rpx;
-  top: 50%;
-  transform: translateY(-50%);
+.close-btn {
   font-size: 40rpx;
   color: #999;
+  padding: 10rpx;
 }
 
-.body {
-  padding: 30rpx;
+.popup-body {
+  flex: 1;
   max-height: 60vh;
 }
 
-.footer {
-  padding: 20rpx 30rpx;
-  border-top: 1rpx solid #eee;
+.agreement-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.popup-footer {
+  padding-top: 20rpx;
 }
 
 .confirm-btn {
   background: linear-gradient(to right, #ff4d4f, #ff7875);
-  color: #fff;
+  color: #ffffff;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  height: 88rpx;
+  line-height: 88rpx;
   border: none;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-}
-
-.confirm-btn:active {
-  opacity: 0.8;
 }
 </style>

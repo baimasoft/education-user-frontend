@@ -31,7 +31,7 @@
     <!-- 新增地址按钮 -->
     <view class="add-address-btn-container">
       <button class="add-address-btn" @tap="showAddressModal('add')">
-        + 新增收货地址
+        + 新增地址
       </button>
     </view>
 

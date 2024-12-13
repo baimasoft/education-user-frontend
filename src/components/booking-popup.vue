@@ -34,12 +34,14 @@
               <view class="quantity-control">
                 <button
                   class="quantity-btn"
-                  :disabled="!quantities[service.id]"
+                  :disabled="!getServiceQuantity(service.id)"
                   @tap="handleDecrement(service.id)"
                 >
                   −
                 </button>
-                <text class="quantity">{{ quantities[service.id] || 0 }}</text>
+                <text class="quantity">{{
+                  getServiceQuantity(service.id)
+                }}</text>
                 <button class="quantity-btn" @tap="handleIncrement(service.id)">
                   +
                 </button>
@@ -61,6 +63,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useOrderStore, type OrderService } from "@/stores/order";
 
 interface Service {
   id: number;
@@ -87,33 +90,101 @@ const emit = defineEmits<{
   (e: "submit"): void;
 }>();
 
-const quantities = ref<{ [key: number]: number }>({});
+const selectedServices = ref<OrderService[]>([]);
 
 const totalPrice = computed(() => {
-  if (!props.coach?.services) return 0;
-  return props.coach.services.reduce((sum, service) => {
-    return sum + service.price * (quantities.value[service.id] || 0);
+  return selectedServices.value.reduce((sum, service) => {
+    return sum + service.price * service.quantity;
   }, 0);
 });
 
+const orderStore = useOrderStore();
+
 const handleClose = () => {
   emit("update:visible", false);
-  quantities.value = {};
+  selectedServices.value = [];
 };
 
 const handleDecrement = (serviceId: number) => {
-  if (quantities.value[serviceId] > 0) {
-    quantities.value[serviceId]--;
+  const index = selectedServices.value.findIndex(
+    (item) => item.id === serviceId
+  );
+  if (index > -1) {
+    if (selectedServices.value[index].quantity > 1) {
+      selectedServices.value[index].quantity--;
+      selectedServices.value[index].remainingQuantity =
+        selectedServices.value[index].quantity;
+    } else {
+      selectedServices.value.splice(index, 1);
+    }
   }
 };
 
 const handleIncrement = (serviceId: number) => {
-  quantities.value[serviceId] = (quantities.value[serviceId] || 0) + 1;
+  const service = props.coach?.services?.find((s) => s.id === serviceId);
+  if (!service) return;
+
+  const index = selectedServices.value.findIndex(
+    (item: any) => item.id === serviceId
+  );
+  if (index > -1) {
+    selectedServices.value[index].quantity++;
+    selectedServices.value[index].remainingQuantity =
+      selectedServices.value[index].quantity;
+  } else {
+    selectedServices.value.push({
+      id: service.id,
+      name: service.name,
+      duration: service.duration,
+      price: service.price,
+      quantity: 1,
+      remainingQuantity: 1,
+    });
+  }
 };
 
 const handleSubmit = () => {
-  emit("submit");
+  if (selectedServices.value.length === 0) {
+    uni.showToast({
+      title: "请选择预约课程",
+      icon: "none",
+    });
+    return;
+  }
+
+  // 创建订单
+  const order = orderStore.createOrder({
+    teacherName: props.coach?.name,
+    teacherAvatar: props.coach?.avatar,
+    teacherTitle: "上门授课",
+    amount: totalPrice.value,
+    services: selectedServices.value,
+    teacherId: props.coach?.id || 0,
+    teacherPhone: props.coach?.phone || "",
+  });
+
+  // 先关闭弹窗
   handleClose();
+
+  // 发出提交事件
+  emit("submit");
+
+  // 跳转到订单详情页
+  uni.navigateTo({
+    url: `/pages/orders/order-detail?id=${order.id}`,
+    // success: () => {
+    //   uni.showToast({
+    //     title: "预约成功",
+    //     icon: "success",
+    //   });
+    // },
+  });
+};
+
+// 获取服务数量的辅助函数
+const getServiceQuantity = (serviceId: number) => {
+  const service = selectedServices.value.find((item) => item.id === serviceId);
+  return service?.quantity || 0;
 };
 </script>
 
@@ -276,10 +347,10 @@ const handleSubmit = () => {
   background: linear-gradient(to right, #ff4d4f, #ff7875);
   color: #ffffff;
   font-size: 24rpx;
-  padding: 8rpx 24rpx;
+  padding: 15rpx 24rpx;
   border-radius: 24rpx;
   border: none;
-  line-height: 1.5;
+  line-height: 24rpx;
   margin-right: 0;
 }
 .coach-name {

@@ -121,39 +121,11 @@ import CityPicker from "@/components/CityPicker.vue";
 import { useTeacherStore } from "@/stores/teacher";
 import BookingPopup from "@/components/booking-popup.vue";
 
-interface Service {
-  id: number;
-  name: string;
-  duration: string;
-  price: number;
-}
-
-interface Coach {
-  id: number;
-  name: string;
-  age: number;
-  avatar?: string;
-  available: boolean;
-  distance: string;
-  orders: number;
-  rating: number;
-  signature?: string;
-  price: number;
-  services?: Service[];
-  city: string;
-  earliestTime: string;
-  instruments: string[];
-  address: string;
-  introduction: string;
-  storeid?: number;
-}
-
 const cityStore = useCityStore();
 const teacherStore = useTeacherStore();
 
 const selectedTab = ref("推荐教员");
-const selectedCoach = ref<Coach | null>(null);
-const quantities = ref<{ [key: number]: number }>({});
+const selectedCoach = ref<any>(null);
 
 const tabs = [
   "推荐教员",
@@ -167,132 +139,94 @@ const tabs = [
   "尤克里里",
 ];
 
-const coaches = ref<Coach[]>([
-  {
-    id: 1,
-    name: "刘老师",
-    age: 28,
-    available: true,
-    distance: "1.2",
-    orders: 128,
-    rating: 4.9,
-    signature: "专注钢琴教学10年",
-    price: 280,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["钢琴"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 1, name: "钢琴体验课", duration: "45分钟", price: 99 },
-      { id: 2, name: "钢琴正式课", duration: "60分钟", price: 280 },
-    ],
-    address: "广东省广州市天河路",
-    introduction: "",
-  },
-  {
-    id: 2,
-    name: "李老师",
-    age: 32,
-    available: true,
-    distance: "2.5",
-    orders: 256,
-    rating: 4.8,
-    signature: "专注小提琴教学12年",
-    price: 320,
-    city: "深圳市",
-    earliestTime: "明天",
-    instruments: ["小提琴"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 3, name: "小提琴体验课", duration: "45分钟", price: 129 },
-      { id: 4, name: "小提琴正式课", duration: "60分钟", price: 320 },
-    ],
-    address: "广东省深圳市南山区",
-    introduction: "",
-  },
-  {
-    id: 3,
-    name: "张老师",
-    age: 35,
-    available: false,
-    distance: "0.8",
-    orders: 312,
-    rating: 4.95,
-    signature: "专注古筝教学15年",
-    price: 300,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["古筝", "小提琴", "钢琴"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 5, name: "古筝体验课", duration: "45分钟", price: 119 },
-      { id: 6, name: "古筝正式课", duration: "60分钟", price: 300 },
-    ],
-    address: "广东省广州市白云区",
-    introduction: "",
-  },
-  {
-    id: 4,
-    name: "陈老师",
-    age: 30,
-    available: true,
-    distance: "1.5",
-    orders: 200,
-    rating: 4.85,
-    signature: "吉他教学8年经验",
-    price: 260,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["吉他", "古筝"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 7, name: "吉他体验课", duration: "45分钟", price: 89 },
-      { id: 8, name: "吉他正式课", duration: "60分钟", price: 260 },
-    ],
-    address: "广东省广州市白云区",
-    introduction: "",
-  },
-  {
-    id: 5,
-    name: "林老师",
-    age: 28,
-    available: true,
-    distance: "3.0",
-    orders: 150,
-    rating: 4.75,
-    signature: "架子鼓教学5年经验",
-    price: 350,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["架子鼓"],
-    services: [
-      { id: 9, name: "架子鼓体验课", duration: "45分钟", price: 139 },
-      { id: 10, name: "架子鼓正式课", duration: "60分钟", price: 350 },
-    ],
-    address: "广东省广州市南沙区",
-    introduction:
-      "2017级星海音乐学院现代音乐与戏剧学院电子键盘专业学生;\n" +
-      "入选星海音乐学院\n" +
-      "优秀人才培养计划\n" +
-      "亚太电子键盘协会会员\n" +
-      "2017年考入星海音乐学院，跟随谢及老师和王稔仪老师进行更专业化的学习\n" +
-      "具备良好的音乐理论基础，在编曲和作曲方面有较深入的学习和积累，有扎实的理论基础和良好的执行能力\n" +
-      "2021年加入到玖月音乐教育进行执教活动\n" +
-      "主要奖项:\n" +
-      "2017年荣获星海音乐学院" +
-      "笃学奖\n",
-  },
-]);
+const coaches = computed(() => teacherStore.teacherList);
 
-// 根据当前城市和分类筛选教员
+// 添加地理位置相关函数
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // 地球半径，单位km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return (R * c).toFixed(1); // 返回1位小数
+};
+
+// 获取位置的具体实现
+const getLocation = (resolve: Function, reject: Function) => {
+  uni.getLocation({
+    type: 'wgs84',
+    isHighAccuracy: true,
+    highAccuracyExpireTime: 3000,
+    success: (res) => {
+      resolve({
+        latitude: res.latitude,
+        longitude: res.longitude
+      });
+    },
+    fail: (err) => {
+      console.error('获取位置失败:', err);
+      // 失败时返回默认位置（可以设置为城市中心点）
+      resolve({
+        latitude: 23.03504,
+        longitude: 113.726245
+      });
+    }
+  });
+};
+
+// 更新所有教员的距离
+const updateTeachersDistance = async () => {
+  try {
+    const currentLocation = await new Promise((resolve, reject) => {
+      getLocation(resolve, reject);
+    }) as {
+      latitude: number;
+      longitude: number;
+    };
+
+    // 更新教员列表中的距离
+    const updatedTeachers = coaches.value.map(teacher => {
+      if (teacher.latitude && teacher.longitude) {
+        const distance = calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          teacher.latitude,
+          teacher.longitude
+        );
+        return {
+          ...teacher,
+          distance: Number(distance)
+        };
+      }
+      return {
+        ...teacher,
+        distance: 999 // 如果没有经纬度信息，设置一个较大的距离值
+      };
+    });
+
+    // 更新 store 中的数据
+    teacherStore.$patch({
+      teacherList: updatedTeachers
+    });
+  } catch (error) {
+    console.error('更新距离失败:', error);
+  }
+};
+
+// 修改筛选逻辑，添加距离排序
 const filteredCoaches = computed(() => {
   let filtered = coaches.value;
+  
   // 先按城市筛选
   if (cityStore.currentCity?.name) {
     filtered = filtered.filter(
       (coach) => coach.city === cityStore.currentCity?.name
     );
   }
+  
   // 按搜索关键词筛选
   const keyword = searchQuery.value.trim().toLowerCase();
   if (keyword) {
@@ -305,11 +239,23 @@ const filteredCoaches = computed(() => {
     );
   }
 
-  // 如果是推荐教员，按评分排序
+  // 如果是推荐教员，按评分和距离综合排序
   if (selectedTab.value === "推荐教员") {
-    filtered = [...filtered].sort((a, b) => b.rating - a.rating);
+    filtered = [...filtered].sort((a, b) => {
+      // 评分权重 0.7，距离权重 0.3
+      const scoreWeight = 0.7;
+      const distanceWeight = 0.3;
+      
+      const scoreA = a.rating * scoreWeight;
+      const scoreB = b.rating * scoreWeight;
+      
+      const distanceA = (1 / Number(a.distance)) * distanceWeight;
+      const distanceB = (1 / Number(b.distance)) * distanceWeight;
+      
+      return (scoreB + distanceB) - (scoreA + distanceA);
+    });
   } else {
-    // 再按分类筛选
+    // 按分类筛选
     filtered = filtered.filter((coach) =>
       coach.instruments.includes(selectedTab.value)
     );
@@ -318,20 +264,13 @@ const filteredCoaches = computed(() => {
   return filtered;
 });
 
-const totalPrice = computed(() => {
-  if (!selectedCoach.value?.services) return 0;
-  return selectedCoach.value.services.reduce((sum, service) => {
-    return sum + service.price * (quantities.value[service.id] || 0);
-  }, 0);
-});
-
 const setSelectedTab = (tab: string) => {
   selectedTab.value = tab;
 };
 
 const showBooking = ref(false);
 
-const handleBooking = (coach: Coach) => {
+const handleBooking = (coach: any) => {
   if (!coach.available) {
     uni.showToast({
       title: "该教员暂不提供服务",
@@ -370,10 +309,16 @@ const performSearch = () => {
 };
 onMounted(() => {
   cityStore.initCurrentCity();
+  // 延迟执行位置更新
+  setTimeout(() => {
+    updateTeachersDistance().catch(err => {
+      console.error('距离更新失败:', err);
+    });
+  }, 1000);
 });
 
 // 处理教员点击
-const handleTeacherClick = (teacher: Coach) => {
+const handleTeacherClick = (teacher: any) => {
   teacherStore.updateTeacher(teacher);
   uni.navigateTo({
     url: `/pages/teacher/teacher-detail?id=${teacher.id}`,
@@ -630,10 +575,10 @@ const handleTeacherClick = (teacher: Coach) => {
   background: linear-gradient(to right, #ff4d4f, #ff7875);
   color: #ffffff;
   font-size: 24rpx;
-  padding: 8rpx 24rpx;
+  padding: 15rpx 24rpx;
   border-radius: 24rpx;
   border: none;
-  line-height: 1.5;
+  line-height: 24rpx;
   margin-right: 0;
 }
 
@@ -643,11 +588,13 @@ const handleTeacherClick = (teacher: Coach) => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
+  width: 200rpx;
+  height: 200rpx;
   font-size: 80rpx;
   margin-bottom: 20rpx;
 }

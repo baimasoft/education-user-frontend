@@ -273,12 +273,13 @@ const showInstrumentDetail = (instrument: Instrument) => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
   width: 200rpx;
+  height: 200rpx;
   font-size: 80rpx;
   margin-bottom: 20rpx;
 }

@@ -125,75 +125,11 @@ import { useStoreStore } from "@/stores/store";
 const cityStore = useCityStore();
 const storeStore = useStoreStore();
 
-interface Store {
-  id: number;
-  name: string;
-  status: string;
-  price: string;
-  distance: number;
-  address: string;
-  features: string[];
-  rating: string;
-  orderCount: number;
-  image?: string;
-  city: string;
-  instruments: string[];
-  businessHours: string;
-  phone: string;
-}
-
 const showCityPicker = ref(false);
 // 搜索关键词
 const searchQuery = ref("");
 
-const stores = ref<Store[]>([
-  {
-    id: 0,
-    name: "雀巢音乐东尚城门店",
-    status: "营业中",
-    price: "189",
-    distance: 1.2,
-    address: "天河路123号音乐大厦3楼",
-    features: ["免服务费", "可预约"],
-    rating: "4.8",
-    image: "",
-    orderCount: 1560,
-    city: "广州市",
-    instruments: ["吉他", "钢琴", "架子鼓"],
-    businessHours: "10:00-23:00",
-    phone: "0571-88888888",
-  },
-  {
-    id: 1,
-    name: "音乐空间(天河店)",
-    status: "营业中",
-    price: "109",
-    distance: 0.8,
-    address: "天河路123号音乐大厦3楼",
-    features: ["免费WiFi", "停车场", "休息区"],
-    rating: "4.9",
-    orderCount: 2890,
-    city: "广州市",
-    instruments: ["小提琴", "古筝", "电子琴"],
-    businessHours: "10:00-23:00",
-    phone: "0571-88888888",
-  },
-  {
-    id: 2,
-    name: "乐器中心(珠江新城店)",
-    status: "休息中",
-    price: "199",
-    distance: 1.2,
-    address: "珠江新城华夏路456号",
-    features: ["免费WiFi", "器材租赁", "休息区"],
-    rating: "5.0",
-    orderCount: 1560,
-    city: "广州市",
-    instruments: ["架子鼓", "贝斯", "电吉他"],
-    businessHours: "10:00-23:00",
-    phone: "0571-88888888",
-  },
-]);
+const stores = computed(() => storeStore.storeList);
 
 const filteredStores = computed(() => {
   let result = stores.value;
@@ -223,7 +159,7 @@ const handleSearch = () => {
   // 搜索已通过计算属性实现
 };
 
-const handleStoreSelect = (store: Store) => {
+const handleStoreSelect = (store: any) => {
   storeStore.updateStore(store);
   uni.navigateTo({
     url: `/pages/nearby/store-detail?id=${store.id}`,
@@ -471,12 +407,13 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
   width: 200rpx;
+  height: 200rpx;
   font-size: 80rpx;
   margin-bottom: 20rpx;
 }

@@ -102,82 +102,90 @@
     <view
       v-if="showReservationModal"
       class="modal-mask"
-      @tap.self="closeReservationModal"
+      @tap="closeReservationModal"
     >
       <view
         class="modal-container"
         :class="{ 'modal-show': showReservationModal }"
       >
-        <view class="reservation-modal">
+        <view class="reservation-modal" @tap.stop>
           <view class="modal-header">
-            <text class="modal-title">预约乐室</text>
-            <text class="modal-close" @tap="closeReservationModal"> ✕ </text>
+            <text class="modal-title">预约房间</text>
+            <text class="modal-close" @tap="closeReservationModal">×</text>
           </view>
 
-          <view v-if="currentRoom" class="modal-content">
-            <view class="room-preview">
-              <image
-                :src="currentRoom.image || '/static/images/default-nearby.png'"
-                class="room-preview-image"
-                mode="aspectFill"
+          <view class="room-preview">
+            <image
+              :src="currentRoom?.image || '/static/images/default-nearby.png'"
+              class="room-preview-image"
+              mode="aspectFill"
+            />
+            <view class="room-info">
+              <text class="room-name">{{ currentRoom?.name }}</text>
+              <text class="room-price">
+                <text class="price-symbol">¥</text>
+                <text class="price">{{ currentRoom?.price }}</text>
+                <text class="unit">/小时</text>
+              </text>
+            </view>
+          </view>
+
+          <view class="reservation-form">
+            <view class="form-item">
+              <text class="form-label">预约日期</text>
+              <picker
+                mode="date"
+                :value="selectedDate"
+                :start="today"
+                :end="maxDate"
+                @change="onDateChange"
+              >
+                <view class="picker">{{ selectedDate || "请选择日期" }}</view>
+              </picker>
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">预约时间</text>
+              <picker
+                mode="time"
+                :value="selectedTime"
+                start="09:00"
+                end="22:00"
+                @change="onTimeChange"
+              >
+                <view class="picker">{{ selectedTime || "请选择时间" }}</view>
+              </picker>
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">预约时长</text>
+              <picker
+                mode="selector"
+                :range="durationOptions"
+                :value="durationIndex"
+                @change="onDurationChange"
+              >
+                <view class="picker">{{
+                  selectedDuration || "请选择时长"
+                }}</view>
+              </picker>
+            </view>
+
+            <view class="form-item">
+              <text class="form-label">联系电话</text>
+              <input
+                type="number"
+                v-model="contactPhone"
+                placeholder="请输入手机号"
+                class="phone-input"
+                maxlength="11"
               />
-              <view class="room-preview-info">
-                <text class="room-name">{{ currentRoom.name }}</text>
-                <text class="room-price">¥{{ currentRoom.price }}/小时</text>
-              </view>
             </view>
+          </view>
 
-            <view class="reservation-form">
-              <view class="form-item">
-                <text class="form-label">选择日期</text>
-                <picker
-                  mode="date"
-                  :value="selectedDate"
-                  @change="onDateChange"
-                >
-                  <view class="picker">
-                    {{ selectedDate || "请选择日期" }}
-                  </view>
-                </picker>
-              </view>
-
-              <view class="form-item">
-                <text class="form-label">选择时间</text>
-                <picker
-                  mode="time"
-                  :value="selectedTime"
-                  @change="onTimeChange"
-                >
-                  <view class="picker">
-                    {{ selectedTime || "请选择时间" }}
-                  </view>
-                </picker>
-              </view>
-
-              <view class="form-item">
-                <text class="form-label">联系电话</text>
-                <input
-                  type="number"
-                  v-model="contactPhone"
-                  placeholder="请输入联系电话"
-                  class="phone-input"
-                />
-              </view>
-
-              <view class="form-item">
-                <text class="form-label">使用时长</text>
-                <picker :range="durationOptions" @change="onDurationChange">
-                  <view class="picker">
-                    {{ selectedDuration || "请选择时长" }}
-                  </view>
-                </picker>
-              </view>
-            </view>
-
-            <view class="total-price">
-              <text>总价：</text>
-              <text class="price">¥{{ calculateTotalPrice() }}</text>
-            </view>
+          <view class="total-price">
+            <text>总计</text>
+            <text class="price">¥{{ calculateTotalPrice() }}</text>
           </view>
 
           <button class="confirm-reservation-btn" @tap="confirmReservation">
@@ -192,21 +200,30 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useCityStore } from "@/stores/city";
+import { useRoomStore, type Room } from "@/stores/room";
 import CityPicker from "@/components/CityPicker.vue";
 
-interface Room {
-  id: number;
-  name: string;
-  price: number;
-  image?: string;
-  address: string;
-  category: string;
-  features: string[];
-  city: string;
-  distance?: number;
-}
-
 const cityStore = useCityStore();
+const roomStore = useRoomStore();
+
+// 获取房间列表
+const rooms = computed(() => roomStore.roomList);
+
+// 筛选房间列表
+const filteredRooms = computed(() => {
+  return rooms.value.filter((room) => {
+    const matchCategory =
+      currentCategory.value === "all" ||
+      room.category === currentCategory.value;
+    const matchSearch =
+      searchQuery.value === "" ||
+      room.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchCity =
+      !cityStore.currentCity?.name || room.city === cityStore.currentCity?.name;
+    return matchCategory && matchSearch && matchCity;
+  });
+});
+
 const currentCity = ref(cityStore.currentCity?.name || "北京");
 const showCityPicker = ref(false);
 const searchQuery = ref("");
@@ -221,151 +238,6 @@ const categories = [
   { label: "电子乐器", value: "electronic" },
   { label: "贝斯", value: "bass" },
 ];
-const rooms = ref<Room[]>([
-  // 北京市的乐室
-  {
-    id: 1,
-    name: "城市音乐基地",
-    price: 120,
-    image: "",
-    address: "人民路256号",
-    category: "recording",
-    features: ["录音设备", "隔音", "专业调音"],
-    city: "北京市",
-    distance: 3.5, // 距离（公里）
-  },
-  {
-    id: 2,
-    name: "北京爵士音乐工作室",
-    price: 150,
-    image: "",
-    address: "朝阳区光华路20号",
-    category: "piano",
-    features: ["专业钢琴", "爵士音乐氛围", "录音设备"],
-    city: "北京市",
-  },
-  {
-    id: 3,
-    name: "鼓动音乐空间",
-    price: 100,
-    image: "",
-    address: "海淀区中关村南大街",
-    category: "drums",
-    features: ["专业架子鼓", "隔音室", "教学设备"],
-    city: "北京市",
-  },
-
-  // 广州市的乐室
-  {
-    id: 4,
-    name: "星光音乐工作室",
-    price: 88,
-    image: "",
-    address: "中山路128号",
-    category: "electric-guitar",
-    features: ["专业设备", "空调", "免费wifi"],
-    city: "广州市",
-  },
-  {
-    id: 5,
-    name: "广州音乐创意基地",
-    price: 110,
-    image: "",
-    address: "天河区珠江新城",
-    category: "violin",
-    features: ["专业小提琴", "音乐教学", "舒适环境"],
-    city: "广州市",
-  },
-  {
-    id: 6,
-    name: "嘉韵音乐空间",
-    price: 95,
-    image: "",
-    address: "荔湾区芳村大道",
-    category: "bass",
-    features: ["贝斯教学", "专业音响", "录音室"],
-    city: "广州市",
-  },
-
-  // 深圳市的乐室
-  {
-    id: 7,
-    name: "音乐梦工厂",
-    price: 100,
-    image: "",
-    address: "科技路88号",
-    category: "drums",
-    features: ["专业架子鼓", "隔音室", "教学设备"],
-    city: "深圳市",
-  },
-  {
-    id: 8,
-    name: "深圳电子音乐实验室",
-    price: 130,
-    image: "",
-    address: "南山区高新园区",
-    category: "electronic",
-    features: ["电子音乐设备", "DJ工作站", "现代音乐创作空间"],
-    city: "深圳市",
-  },
-  {
-    id: 9,
-    name: "和弦音乐工作室",
-    price: 85,
-    image: "",
-    address: "福田区车公庙",
-    category: "guitar",
-    features: ["民谣吉他", "电吉他", "音乐培训"],
-    city: "深圳市",
-  },
-
-  // 上海市的乐室
-  {
-    id: 10,
-    name: "上海爵士音乐俱乐部",
-    price: 160,
-    image: "",
-    address: "黄浦区外滩",
-    category: "piano",
-    features: ["专业三角钢琴", "爵士音乐氛围", "高端音响系统"],
-    city: "上海市",
-  },
-  {
-    id: 11,
-    name: "浦东音乐创意园",
-    price: 105,
-    image: "",
-    address: "浦东新区陆家嘴",
-    category: "recording",
-    features: ["专业录音棚", "混音工作站", "音乐制作"],
-    city: "上海市",
-  },
-  {
-    id: 12,
-    name: "魔都电子音乐基地",
-    price: 120,
-    image: "",
-    address: "徐汇区田林路",
-    category: "electronic",
-    features: ["电子音乐工作室", "MIDI设备", "音乐编程"],
-    city: "上海市",
-  },
-]);
-
-const filteredRooms = computed(() => {
-  return rooms.value.filter((room) => {
-    const matchCategory =
-      currentCategory.value === "all" ||
-      room.category === currentCategory.value;
-    const matchSearch =
-      searchQuery.value === "" || room.name.includes(searchQuery.value);
-    const matchCity =
-      currentCity.value === "北京" || // 默认显示北京
-      room.city === currentCity.value;
-    const result = matchCategory && matchSearch && matchCity;
-    return result;
-  });
-});
 
 const handleCityChange = (cityCode: string) => {
   cityStore.setCurrentCity(cityCode);
@@ -426,15 +298,17 @@ const onTimeChange = (e: any) => {
 };
 
 // 时长选择
+const durationIndex = ref(0);
 const onDurationChange = (e: any) => {
-  selectedDuration.value = durationOptions[e.detail.value];
+  durationIndex.value = e.detail.value;
+  selectedDuration.value = durationOptions[durationIndex.value];
 };
 
 // 计算总价
 const calculateTotalPrice = () => {
   if (!currentRoom.value || !selectedDuration.value) return 0;
-  const duration = parseInt(selectedDuration.value);
-  return currentRoom.value.price * duration;
+  const hours = parseInt(selectedDuration.value);
+  return currentRoom.value.price * hours;
 };
 
 // 确认预约
@@ -460,6 +334,13 @@ const confirmReservation = () => {
 
   closeReservationModal();
 };
+
+// 获取今天和最大可选日期
+const today = new Date().toISOString().split("T")[0];
+const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .split("T")[0];
+
 onMounted(() => {
   cityStore.initCurrentCity();
   currentCity.value = cityStore.currentCity?.name || "北京";
@@ -583,10 +464,6 @@ onMounted(() => {
   margin-bottom: 10rpx;
 }
 
-.room-name {
-  font-weight: bold;
-}
-
 .price-box {
   display: flex;
   align-items: baseline;
@@ -656,13 +533,14 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
   width: 200rpx;
   height: 200rpx;
+  font-size: 80rpx;
   margin-bottom: 20rpx;
 }
 
@@ -684,28 +562,26 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
   display: flex;
-  justify-content: center;
   align-items: flex-end;
-  z-index: 1000;
 }
+
 .modal-container {
   width: 100%;
-  max-height: 80%;
-  background-color: transparent;
-  transition: all 0.3s ease;
+  background-color: #ffffff;
+  border-radius: 24rpx 24rpx 0 0;
   transform: translateY(100%);
+  transition: transform 0.3s ease;
 }
+
 .modal-container.modal-show {
   transform: translateY(0);
 }
+
 .reservation-modal {
-  background-color: #ffffff;
-  border-top-left-radius: 20rpx;
-  border-top-right-radius: 20rpx;
   padding: 30rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
@@ -741,6 +617,7 @@ onMounted(() => {
 .room-name {
   font-size: 32rpx;
   font-weight: bold;
+  margin-right: 20rpx;
 }
 
 .room-price {

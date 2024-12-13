@@ -1,11 +1,25 @@
 <template>
   <view class="store-detail" v-if="storeInfo">
-    <!-- 门店图片 -->
-    <image
-      class="store-image"
-      :src="storeInfo.image || '/static/images/default-nearby.png'"
-      mode="aspectFill"
-    />
+    <!-- 轮播图 -->
+    <swiper
+      class="store-swiper"
+      circular
+      autoplay
+      :interval="3000"
+      :duration="500"
+      :indicator-dots="true"
+      indicator-color="rgba(255, 255, 255, 0.6)"
+      indicator-active-color="#ffffff"
+    >
+      <swiper-item v-for="(image, index) in storeImages" :key="index">
+        <image
+          :src="image || '/static/images/default-nearby.png'"
+          mode="aspectFill"
+          class="swiper-image"
+          @tap="previewImage(image)"
+        />
+      </swiper-item>
+    </swiper>
 
     <!-- 基本信息 -->
     <view class="info-section">
@@ -87,9 +101,10 @@
           <view class="info-label">
             <text class="icon">📍</text>
             <text class="label">门店地址</text>
-          </view>
-          <view class="address-info">
             <text class="value">{{ storeInfo.address }}</text>
+          </view>
+          <view class="business-address-info">
+            <button class="nav-button" @tap="openMap">导航</button>
             <text class="distance">{{ storeInfo.distance }}km</text>
           </view>
         </view>
@@ -310,170 +325,9 @@ import BookingPopup from "@/components/booking-popup.vue";
 const storeStore = useStoreStore();
 const teacherStore = useTeacherStore();
 
-interface StoreInfo {
-  id: number;
-  name: string;
-  status: string;
-  price: string;
-  distance: number;
-  address: string;
-  features: string[];
-  rating: string;
-  orderCount: number;
-  image?: string;
-  city: string;
-  instruments: string[];
-  businessHours: string;
-  phone: string;
-  storeid?: number;
-}
-interface Service {
-  id: number;
-  name: string;
-  duration: string;
-  price: number;
-}
+const storeInfo = ref<any>(null);
 
-interface Coach {
-  id: number;
-  name: string;
-  age: number;
-  avatar?: string;
-  available: boolean;
-  distance: string;
-  orders: number;
-  rating: number;
-  signature?: string;
-  price: number;
-  services?: Service[];
-  city: string;
-  earliestTime: string;
-  instruments: string[]; // 添加分类标签
-  address: string;
-  introduction: string;
-  storeid?: number;
-}
-const storeInfo = ref<StoreInfo | null>(null);
-
-const coaches = ref<Coach[]>([
-  {
-    id: 1,
-    name: "刘老师",
-    age: 28,
-    available: true,
-    distance: "1.2",
-    orders: 128,
-    rating: 4.9,
-    signature: "专注钢琴教学10年",
-    price: 280,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["钢琴"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 1, name: "钢琴体验课", duration: "45分钟", price: 99 },
-      { id: 2, name: "钢琴正式课", duration: "60分钟", price: 280 },
-    ],
-    address: "广东省广州市天河路",
-    introduction: "",
-    storeid: 0,
-  },
-  {
-    id: 2,
-    name: "李老师",
-    age: 32,
-    available: true,
-    distance: "2.5",
-    orders: 256,
-    rating: 4.8,
-    signature: "专注小提琴教学12年",
-    price: 320,
-    city: "深圳市",
-    earliestTime: "明天",
-    instruments: ["小提琴"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 3, name: "小提琴体验课", duration: "45分钟", price: 129 },
-      { id: 4, name: "小提琴正式课", duration: "60分钟", price: 320 },
-    ],
-    address: "广东省深圳市南山区",
-    introduction: "",
-    storeid: 0,
-  },
-  {
-    id: 3,
-    name: "张老师",
-    age: 35,
-    available: false,
-    distance: "0.8",
-    orders: 312,
-    rating: 4.95,
-    signature: "专注古筝教学15年",
-    price: 300,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["古筝", "小提琴", "钢琴"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 5, name: "古筝体验课", duration: "45分钟", price: 119 },
-      { id: 6, name: "古筝正式课", duration: "60分钟", price: 300 },
-    ],
-    address: "广东省广州市白云区",
-    introduction: "",
-    storeid: 0,
-  },
-  {
-    id: 4,
-    name: "陈老师",
-    age: 30,
-    available: true,
-    distance: "1.5",
-    orders: 200,
-    rating: 4.85,
-    signature: "吉他教学8年经验",
-    price: 260,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["吉他", "古筝"],
-    avatar: "https://www.waseda.jp/fedu/edu/assets/uploads/2021/06/Img1503.jpg",
-    services: [
-      { id: 7, name: "吉他体验课", duration: "45分钟", price: 89 },
-      { id: 8, name: "吉他正式课", duration: "60分钟", price: 260 },
-    ],
-    address: "广东省广州市白云区",
-    introduction: "",
-    storeid: 0,
-  },
-  {
-    id: 5,
-    name: "林老师",
-    age: 28,
-    available: true,
-    distance: "3.0",
-    orders: 150,
-    rating: 4.75,
-    signature: "架子鼓教学5年经验",
-    price: 350,
-    city: "广州市",
-    earliestTime: "明天",
-    instruments: ["架子鼓"],
-    services: [
-      { id: 9, name: "架子鼓体验课", duration: "45分钟", price: 139 },
-      { id: 10, name: "架子鼓正式课", duration: "60分钟", price: 350 },
-    ],
-    address: "广东省广州市南沙区",
-    storeid: 1,
-    introduction:
-      "2017级星海音乐学院现代音乐与戏剧学院电子键盘专业学生;\n" +
-      "入选星海音乐学院优秀人才培养计划\n" +
-      "亚太电子键盘协会会员\n" +
-      "2017年考入星海音乐学院，跟随谢及老师和王稔仪老师进行更专业化的学习\n" +
-      "具备良好的音乐理论基础，在编曲和作曲方面有较深入的学习和积累，扎实的理论基础和良好的执行能力\n" +
-      "2021年加入到玖月音乐教育进行执教活动\n" +
-      "主要奖项:\n" +
-      "2017年荣获星海音乐学院笃学奖\n",
-  },
-]);
+const coaches = computed(() => teacherStore.teacherList);
 // 拨打电话
 const makePhoneCall = () => {
   uni.makePhoneCall({
@@ -493,7 +347,6 @@ const getStoreDetail = async () => {
   if (store) {
     storeInfo.value = store;
   }
-  //   console.log(storeInfo.value);
 };
 
 // 使用 onLoad 替代 onMounted
@@ -503,11 +356,13 @@ onLoad((options) => {
 
 // 根据门店ID筛选教员
 const filteredTeachers = computed(() => {
-  return coaches.value.filter((coach) => coach.storeid === storeInfo.value.id);
+  return coaches.value.filter(
+    (coach: any) => coach.storeid === storeInfo.value.id
+  );
 });
 
 // 处理教员点击
-const handleTeacherClick = (teacher: Coach) => {
+const handleTeacherClick = (teacher: any) => {
   teacherStore.updateTeacher(teacher);
   uni.navigateTo({
     url: `/pages/teacher/teacher-detail?id=${teacher.id}`,
@@ -519,10 +374,10 @@ const showBooking = ref(false);
 const selectedCoach = ref<Coach | null>(null);
 
 // 修改预约处理函数
-const handleBooking = (coach: Coach) => {
+const handleBooking = (coach: any) => {
   if (!coach.available) {
     uni.showToast({
-      title: "该教员暂不提供���务",
+      title: "该教员暂不供服务",
       icon: "none",
     });
     return;
@@ -646,7 +501,7 @@ const handleSubmitComment = () => {
     return;
   }
 
-  // 添加新评论
+  // 添加评论
   comments.value.unshift({
     id: Date.now(),
     username: "我",
@@ -665,17 +520,179 @@ const handleSubmitComment = () => {
     icon: "success",
   });
 };
+
+// 添加地理位置相关函数
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) => {
+  const R = 6371; // 地球半径，单位km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1); // 返回1位小数
+};
+
+// 修改获取位置的实现
+const getLocation = (resolve: Function, reject: Function) => {
+  // 使用 wgs84 类型，更稳定
+  uni.getLocation({
+    type: "wgs84",
+    isHighAccuracy: true,
+    highAccuracyExpireTime: 3000,
+    success: (res) => {
+      resolve({
+        latitude: res.latitude,
+        longitude: res.longitude,
+      });
+    },
+    fail: (err) => {
+      console.error("获取位置失败:", err);
+      // 失败时返回门店的位置作为默认值
+      if (storeInfo.value?.latitude && storeInfo.value?.longitude) {
+        resolve({
+          latitude: storeInfo.value.latitude,
+          longitude: storeInfo.value.longitude,
+        });
+      } else {
+        // 如果门店也没有位置���息，返回一个默认位置
+        resolve({
+          latitude: 23.03504,
+          longitude: 113.726245,
+        });
+      }
+    },
+  });
+};
+
+// 更新距离信息
+const updateDistance = async () => {
+  try {
+    // 检查门店是否有经纬度信息
+    if (!storeInfo.value?.latitude || !storeInfo.value?.longitude) {
+      console.warn("门店缺少经纬度信息");
+      return;
+    }
+
+    const currentLocation = (await new Promise((resolve, reject) => {
+      getLocation(resolve, reject);
+    })) as {
+      latitude: number;
+      longitude: number;
+    };
+
+    const distance = calculateDistance(
+      currentLocation.latitude,
+      currentLocation.longitude,
+      storeInfo.value.latitude,
+      storeInfo.value.longitude
+    );
+
+    if (storeInfo.value) {
+      storeInfo.value.distance = Number(distance);
+    }
+  } catch (error) {
+    console.error("更新距离失败:", error);
+    // 如果获取位置失败，使用一个默认距离
+    if (storeInfo.value) {
+      storeInfo.value.distance = storeInfo.value.distance || 0;
+    }
+  }
+};
+
+// 修改页面加载时的处理
+onLoad(() => {
+  getStoreDetail().then(() => {
+    // 延迟执行位置更新
+    setTimeout(() => {
+      updateDistance().catch((err) => {
+        console.error("距离更新失败:", err);
+      });
+    }, 1000);
+  });
+});
+
+// 打开地图前检查经纬度
+const openMap = () => {
+  if (!storeInfo.value?.latitude || !storeInfo.value?.longitude) {
+    uni.showToast({
+      title: "暂无位置信息",
+      icon: "none",
+    });
+    return;
+  }
+
+  uni.openLocation({
+    latitude: storeInfo.value.latitude,
+    longitude: storeInfo.value.longitude,
+    name: storeInfo.value?.name || "",
+    address: storeInfo.value?.address || "",
+    fail: () => {
+      uni.showToast({
+        title: "打开地图失败",
+        icon: "none",
+      });
+    },
+  });
+};
+
+// 添加门店图片数组的计算属性
+const storeImages = computed(() => {
+  const defaultImages = ["/static/images/default-nearby.png"];
+
+  if (!storeInfo.value) return defaultImages;
+
+  const images = [];
+
+  // 如果有主图，添加到数组
+  if (storeInfo.value.image) {
+    images.push(storeInfo.value.image);
+  }
+
+  // 如果有其他图片，添加到数组
+  if (storeInfo.value.images && Array.isArray(storeInfo.value.images)) {
+    images.push(...storeInfo.value.images);
+  }
+
+  // 如果没有任何图片，返回默认图片
+  return images.length > 0 ? images : defaultImages;
+});
+
+// 添加图片预览功能
+const previewImage = (current: string) => {
+  uni.previewImage({
+    urls: storeImages.value,
+    current,
+  });
+};
 </script>
 
-<style>
+<style scoped>
 .store-detail {
   min-height: 100vh;
   background: #ffffff;
 }
 
-.store-image {
+.store-swiper {
   width: 100%;
   height: 450rpx;
+}
+
+.swiper-image {
+  width: 100%;
+  height: 100%;
+}
+
+.store-image {
+  display: none;
 }
 
 .info-section {
@@ -733,12 +750,23 @@ const handleSubmitComment = () => {
 .info-item {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding: 16rpx 0;
 }
 
 .info-item:not(:last-child) {
   border-bottom: 2rpx solid #eee;
+}
+
+.info-item .value {
+  flex: 1;
+  font-size: 26rpx;
+  color: #333;
+  text-align: right;
+}
+
+.info-item .phone {
+  color: #007bff;
 }
 
 .info-label {
@@ -755,17 +783,6 @@ const handleSubmitComment = () => {
 .info-label .label {
   font-size: 26rpx;
   color: #666;
-}
-
-.info-item .value {
-  flex: 1;
-  font-size: 26rpx;
-  color: #333;
-  text-align: right;
-}
-
-.info-item .phone {
-  color: #007bff;
 }
 
 .address-info {
@@ -875,10 +892,24 @@ const handleSubmitComment = () => {
   color: #f5222d;
 }
 
-.address-info {
+.business-address-info {
   display: flex;
+  gap: 4rpx;
   align-items: center;
-  gap: 16rpx;
+}
+.nav-button {
+  background: #007bff;
+  color: #ffffff;
+  font-size: 24rpx;
+  padding: 8rpx 24rpx;
+  border-radius: 24rpx;
+  line-height: 24rpx;
+  margin: 0 10rpx;
+}
+
+.distance {
+  font-size: 24rpx;
+  color: #999;
 }
 
 .price-section {
@@ -1033,10 +1064,10 @@ const handleSubmitComment = () => {
   background: linear-gradient(to right, #ff4d4f, #ff7875);
   color: #ffffff;
   font-size: 24rpx;
-  padding: 8rpx 24rpx;
+  padding: 15rpx 24rpx;
   border-radius: 24rpx;
   border: none;
-  line-height: 1.5;
+  line-height: 24rpx;
   margin-right: 0;
 }
 /* ... 其他教员卡片相关样式保持不变 ... */
@@ -1045,12 +1076,14 @@ const handleSubmitComment = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  padding: 40rpx 0;
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
+  width: 200rpx;
+  height: 200rpx;
   font-size: 80rpx;
   margin-bottom: 20rpx;
 }
@@ -1195,26 +1228,6 @@ const handleSubmitComment = () => {
   font-size: 24rpx;
   color: #666;
   margin-top: 8rpx;
-}
-
-.add-comment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8rpx 16rpx;
-  border-radius: 8rpx;
-  background: #ffffff;
-  font-size: 24rpx;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 16rpx;
-  color: #666;
-}
-
-.add-comment.disabled {
-  background: #999;
-  color: #ffffff;
-  cursor: not-allowed;
 }
 
 .comment-input-section {

@@ -178,11 +178,11 @@
           <view class="course-right">
             <text class="course-name">{{ course.name }}</text>
             <text class="course-desc">{{ course.description }}</text>
-            <view class="course-tags">
+            <view class="store-tags">
               <text
                 v-for="(tag, tagIndex) in course.tags"
                 :key="tagIndex"
-                class="course-tag"
+                class="tag free-service"
                 >{{ tag }}</text
               >
             </view>
@@ -226,23 +226,6 @@ interface Banner {
   image: string;
 }
 
-interface Store {
-  id: number;
-  name: string;
-  status: string;
-  price: string;
-  distance: number;
-  address: string;
-  features: string[];
-  rating: string;
-  orderCount: number;
-  image?: string;
-  city: string;
-  instruments: string[];
-  businessHours: string;
-  phone: string;
-}
-
 interface Feature {
   icon: string;
   text: string;
@@ -264,39 +247,39 @@ const activeTab = ref<"stores" | "courses">("stores");
 const banners = ref<Banner[]>([
   {
     image:
-      "https://th.bing.com/th/id/OIP.EfEQ2MDK4k-cIjHIWcPCYAHaEu?rs=1&pid=ImgDetMain",
+      "https://media.istockphoto.com/id/1347685599/zh/%E7%85%A7%E7%89%87/young-asian-man-with-eyes-closed-enjoying-music-over-headphones-while-relaxing-on-the-sofa-at.jpg?s=2048x2048&w=is&k=20&c=kE7QiJFSFPKLUc7kkYErm3-hk532rJaojzkSTWauqjQ=",
   },
   {
     image:
-      "https://th.bing.com/th/id/OIP.QagFtaBmprePpcuVCEkz9QHaE7?rs=1&pid=ImgDetMain",
+      "https://media.istockphoto.com/id/161838634/zh/%E7%85%A7%E7%89%87/rock-concert.jpg?s=2048x2048&w=is&k=20&c=uwX-5wpbsUJtk_ddlVqXj9tmKp7q_PEg0ao69DFfLWA=",
   },
   {
     image:
-      "https://zximg.guipin.com/upload/default/20201102/cbe318bf19c9c064802ae9f3f68411aa.jpg",
-  },
+      "https://media.istockphoto.com/id/1488536685/zh/%E7%85%A7%E7%89%87/grandfather-enjoy-singing-and-playing-music-with-family-in-the-living-room-at-home.jpg?s=2048x2048&w=is&k=20&c=tkYO3nBJGoxwH4-p2wefJLTqzHca3tmhSBOKx32Oy2A=",
+  }
 ]);
 
 const features = ref<Feature[]>([
-  {
-    icon: "/static/images/music1.png",
-    text: "乐器租赁",
-    path: "/pages/instrument/instrument-rental",
-  },
-  {
-    icon: "/static/images/music2.png",
-    text: "乐器购买",
-    path: "/pages/instrument/instrument-purchase",
-  },
-  {
-    icon: "/static/images/music3.png",
-    text: "乐室预约",
-    path: "/pages/room/room-reservation",
-  },
-  {
-    icon: "/static/images/music4.png",
-    text: "课程购买",
-    path: "/pages/course/index",
-  },
+  // {
+  //   icon: "/static/images/music1.png",
+  //   text: "乐器租赁",
+  //   path: "/pages/instrument/instrument-rental",
+  // },
+  // {
+  //   icon: "/static/images/music2.png",
+  //   text: "乐器购买",
+  //   path: "/pages/instrument/instrument-purchase",
+  // },
+  // {
+  //   icon: "/static/images/music3.png",
+  //   text: "乐室预约",
+  //   path: "/pages/room/room-reservation",
+  // },
+  // {
+  //   icon: "/static/images/music4.png",
+  //   text: "课程购买",
+  //   path: "/pages/course/index",
+  // },
   {
     icon: "/static/icons/teacher-recruit.png",
     text: "教员招募",
@@ -319,80 +302,30 @@ const features = ref<Feature[]>([
   },
 ]);
 
-const stores = ref<Store[]>([
-  {
-    id: 0,
-    name: "雀巢音乐东尚城门店",
-    status: "营业中",
-    price: "189",
-    distance: 1.2,
-    address: "天河路123号音乐大厦3楼",
-    features: ["免服务费", "可预约"],
-    rating: "4.8",
-    image: "",
-    orderCount: 1560,
-    city: "广州市",
-    instruments: ["吉他", "钢琴", "架子鼓"],
-    businessHours: "10:00-23:00",
-    phone: "0571-88888888",
-  },
-  {
-    id: 1,
-    name: "音乐空间(天河店)",
-    status: "营业中",
-    price: "109",
-    distance: 0.8,
-    address: "天河路123号音乐大厦3楼",
-    features: ["免费WiFi", "停车场", "休息���"],
-    rating: "4.9",
-    orderCount: 2890,
-    city: "广州市",
-    instruments: ["小提琴", "古筝", "电子琴"],
-    businessHours: "10:00-23:00",
-    phone: "0571-88888888",
-  },
-  {
-    id: 2,
-    name: "乐器中心(珠江新城店)",
-    status: "休息中",
-    price: "199",
-    distance: 1.2,
-    address: "珠江新城华夏路456号",
-    features: ["免费WiFi", "器材租赁", "休息区"],
-    rating: "4.8",
-    orderCount: 1560,
-    city: "广州市",
-    instruments: ["架子鼓", "贝斯", "电吉他"],
-    businessHours: "10:00-23:00",
-    phone: "0571-88888888",
-  },
-]);
+const stores = computed(() => storeStore.storeList);
 const courses = ref<Course[]>([
-  {
-    id: "1",
-    name: "钢琴基础课程",
-    description: "适合零基础学习者，从基本乐理知识开始",
-    price: 299,
-    sales: 156,
-    image: "",
-    categoryId: "piano",
-    tags: ["零基础", "一对一", "可试听"],
-  },
-  {
-    id: "2",
-    name: "吉他入门课程",
-    description: "通过简单曲目快速入门吉他弹唱",
-    price: 199,
-    sales: 234,
-    image: "",
-    categoryId: "guitar",
-    tags: ["热门", "免费教材", "可试听"],
-  },
+  // {
+  //   id: "1",
+  //   name: "钢琴基础课程",
+  //   description: "适合零基础学习者，从基本乐理知识开始",
+  //   price: 299,
+  //   sales: 156,
+  //   image: "",
+  //   categoryId: "piano",
+  //   tags: ["零基础", "一对一", "可试听"],
+  // },
+  // {
+  //   id: "2",
+  //   name: "吉他入门课程",
+  //   description: "通过简单曲目快速入门吉他弹唱",
+  //   price: 199,
+  //   sales: 234,
+  //   image: "",
+  //   categoryId: "guitar",
+  //   tags: ["热门", "免费教材", "可试听"],
+  // },
 ]);
 const handleCategoryCardClick = (type: "nearby" | "course") => {
-  // 记录用户点击行为
-  console.log(`用户���击了${type === "nearby" ? "教员" : "课程"}分类卡片`);
-
   if (type === "nearby") {
     // 跳转到教员页面
     uni.switchTab({
@@ -406,7 +339,7 @@ const handleCategoryCardClick = (type: "nearby" | "course") => {
   }
 };
 const handleFeatureClick = (feature: Feature): void => {
-  // 如果路径为空，显示开发中提示
+  // 如果路径为空显示开发中提示
   if (!feature.path) {
     uni.showToast({
       title: "功能开发中",
@@ -483,9 +416,176 @@ const handleStoreClick = (store: Store) => {
   });
 };
 
-// 按距离排序的门店列表
+// 添加地理位置相关函数
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) => {
+  const R = 6371; // 地球半径，单位km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1); // 返回1位小数
+};
+
+// 获取当前位置
+const getCurrentLocation = () => {
+  return new Promise((resolve, reject) => {
+    // 先检查权限状态
+    uni.getSetting({
+      success: (res) => {
+        if (!res.authSetting["scope.userLocation"]) {
+          // 如果未授权，直接请求权限
+          uni.authorize({
+            scope: "scope.userLocation",
+            success: () => {
+              // 授权成功后获取位置
+              getLocation(resolve, reject);
+            },
+            fail: () => {
+              // 用户拒绝授权，提示打开设置
+              showLocationSettingDialog(resolve, reject);
+            },
+          });
+        } else {
+          // 已授权，直接获取位置
+          getLocation(resolve, reject);
+        }
+      },
+      fail: (err) => {
+        console.error("获取设置失败:", err);
+        reject(err);
+      },
+    });
+  });
+};
+
+// 修改获取位置的实现
+const getLocation = (resolve: Function, reject: Function) => {
+  // 使用 uni.getLocation 的 type 为 wgs84，更稳定
+  uni.getLocation({
+    type: "wgs84", // 使用 wgs84 类型
+    isHighAccuracy: true, // 开启高精度定位
+    highAccuracyExpireTime: 3000, // 超时时间，单位 ms
+    success: (res) => {
+      resolve({
+        latitude: res.latitude,
+        longitude: res.longitude,
+      });
+    },
+    fail: (err) => {
+      console.error("获取位置失败:", err);
+      // 失败时返回默认位置（可以设置为城市中心点）
+      resolve({
+        latitude: 23.03504, // 默认纬度
+        longitude: 113.726245, // 默认经度
+      });
+    },
+  });
+};
+
+// 显示打开设置的对话框
+const showLocationSettingDialog = (resolve: Function, reject: Function) => {
+  uni.showModal({
+    title: "需要位置权限",
+    content: "需要获取您的地理位��才能计算距离，是否去设置打开？",
+    success: (res) => {
+      if (res.confirm) {
+        // 打开设置页面
+        uni.openSetting({
+          success: (settingRes) => {
+            if (settingRes.authSetting["scope.userLocation"]) {
+              // 用户在设置页面打开了权限
+              getLocation(resolve, reject);
+            } else {
+              reject(new Error("用户未授权位置权限"));
+            }
+          },
+        });
+      } else {
+        reject(new Error("用户取消授权"));
+      }
+    },
+  });
+};
+
+// 更新所有门店的距离
+const updateStoresDistance = async () => {
+  try {
+    const currentLocation = (await new Promise((resolve, reject) => {
+      getLocation(resolve, reject);
+    })) as {
+      latitude: number;
+      longitude: number;
+    };
+
+    // 更新每个门店的距离
+    const updatedStores = stores.value.map((store) => {
+      if (store.latitude && store.longitude) {
+        const distance = calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          store.latitude,
+          store.longitude
+        );
+        return {
+          ...store,
+          distance: Number(distance),
+        };
+      }
+      return {
+        ...store,
+        distance: 999, // 如果没有经纬度信息，设置一个较大的距离值
+      };
+    });
+
+    // 更新 store 中的数据
+    storeStore.$patch({
+      storeList: updatedStores
+    });
+  } catch (error) {
+    console.error("更新距离失败:", error);
+    // 失败时使用默认距离
+    const defaultStores = stores.value.map((store) => ({
+      ...store,
+      distance: store.distance || 999,
+    }));
+    
+    // 更新 store 中的数据
+    storeStore.$patch({
+      storeList: defaultStores
+    });
+  }
+};
+
+// 修改排序逻辑
 const sortedStores = computed(() => {
-  return [...stores.value].sort((a, b) => a.distance - b.distance);
+  if (!stores.value || stores.value.length === 0) return [];
+  
+  return [...stores.value].sort((a, b) => {
+    // 确保有距离信息的排在前面
+    if (a.distance && !b.distance) return -1;
+    if (!a.distance && b.distance) return 1;
+    return a.distance - b.distance;
+  });
+});
+
+// 修改页面加载时的处理
+onMounted(() => {
+  // 延迟执行位置更新
+  setTimeout(() => {
+    updateStoresDistance().catch((err) => {
+      console.error("距离更新失败:", err);
+    });
+  }, 1000);
 });
 </script>
 
@@ -908,22 +1008,6 @@ const sortedStores = computed(() => {
   margin: 10rpx 0;
 }
 
-.course-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin: 10rpx 0;
-}
-
-.course-tag {
-  font-size: 22rpx;
-  color: #ff4d4f;
-  background-color: #fff1f0;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
-  border: 1px solid #ffccc7;
-}
-
 .course-footer {
   display: flex;
   justify-content: space-between;
@@ -946,12 +1030,13 @@ const sortedStores = computed(() => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
   width: 200rpx;
+  height: 200rpx;
   font-size: 80rpx;
   margin-bottom: 20rpx;
 }

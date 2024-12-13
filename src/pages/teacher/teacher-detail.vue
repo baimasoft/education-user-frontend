@@ -1,11 +1,25 @@
 <template>
-  <view class="teacher-detail">
-    <!-- 教员图片 -->
-    <image
-      class="teacher-image"
-      :src="teacherInfo.avatar || '/static/images/default-teacher.png'"
-      mode="aspectFill"
-    />
+  <view class="teacher-detail" v-if="teacherInfo">
+    <!-- 轮播图 -->
+    <swiper
+      class="teacher-swiper"
+      circular
+      autoplay
+      :interval="3000"
+      :duration="500"
+      :indicator-dots="true"
+      indicator-color="rgba(255, 255, 255, 0.6)"
+      indicator-active-color="#ffffff"
+    >
+      <swiper-item v-for="(image, index) in teacherImages" :key="index">
+        <image
+          :src="image || '/static/images/default-teacher.png'"
+          mode="aspectFill"
+          class="swiper-image"
+          @tap="previewImage(image)"
+        />
+      </swiper-item>
+    </swiper>
     <!-- 认证条约 -->
     <view class="cert-tags">
       <view class="cert-title">保障</view>
@@ -26,7 +40,7 @@
     <view class="info-section">
       <view class="header">
         <view class="teacher-info">
-          <text class="teacher-name">{{ teacherInfo.name }}</text>
+          <text class="teacher-name">{{ teacherInfo?.name }}</text>
           <text v-if="teacherInfo.available || false" class="service-badge"
             >可预约</text
           >
@@ -69,7 +83,10 @@
         <text class="signature">签名：{{ teacherInfo.signature }}</text>
         <view class="address">
           <view>地址：{{ teacherInfo.address }}</view>
-          <view>📍{{ teacherInfo.distance }}km</view>
+          <view class="nav-button-box">
+            <button class="nav-button" @tap="openMap">导航</button>
+            <view>📍{{ teacherInfo.distance }}km</view>
+          </view>
         </view>
       </view>
     </view>
@@ -84,7 +101,7 @@
           :class="{ active: activeTab === tab.key }"
           @tap="activeTab = tab.key"
         >
-          {{ tab.name }}
+          {{ tab?.name }}
         </text>
       </view>
 
@@ -236,42 +253,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useTeacherStore } from "@/stores/teacher";
+import { useTeacherStore, type Teacher } from "@/stores/teacher";
 import BookingPopup from "@/components/booking-popup.vue";
 
 const teacherStore = useTeacherStore();
-const teacherInfo = ref({});
+const teacherInfo = ref<Teacher | null>(null);
+const showBooking = ref(false);
 
-interface Works {
-  id: number;
-  title: string;
-  cover: string;
-  type: string;
-  url: string;
-}
-interface Comment {
-  id: number;
-  username: string;
-  userid: number;
-  avatar: string;
-  date: string;
-  score: number;
-  content: string;
-}
-// 获取教员详情
-const getTeacherDetail = async () => {
-  const teacher = await teacherStore.getTeacherDetail();
-  if (teacher) {
-    teacherInfo.value = teacher;
+onLoad(async (options) => {
+  if (options.id) {
+    const teacherId = parseInt(options.id);
+    // 从状态库获取教员列表中的指定教员
+    const teacher = teacherStore.teacherList.find(t => t.id === teacherId);
+    if (teacher) {
+      teacherInfo.value = teacher;
+    } else {
+      // 如果在列表中找不到，可能需要单独获取
+      teacherStore.getTeacherDetail(teacherId).then(teacher => {
+        teacherInfo.value = teacher;
+      });
+    }
   }
-  //   console.log(teacherInfo.value);
-};
-
-// 页面加载
-onLoad(() => {
-  getTeacherDetail();
+    // 更新所有作品的封面
+    for (const work of works.value) {
+    work.cover = await getVideoCover(work.url);
+  }
 });
 
 const isCollected = ref(false);
@@ -285,8 +293,6 @@ const handleCollect = () => {
     duration: 1500,
   });
 };
-
-const showBooking = ref(false);
 
 // 修改立即预约处理函数
 const handleBooking = () => {
@@ -425,25 +431,140 @@ const tabs = [
 
 const activeTab = ref("intro");
 
-// 作品数据
+// 修改获取视频封面的函数
+const getVideoCover = (url: string): Promise<string> => {
+  return new Promise((resolve) => {
+    // B站视频
+    const bilibiliMatch = url.match(/bilibili\.com\/video\/(BV[\w]+)/);
+    if (bilibiliMatch) {
+      // 先获取视频信息
+      uni.request({
+        url: `https://api.bilibili.com/x/web-interface/view?bvid=${bilibiliMatch[1]}`,
+        success: (res: any) => {
+          if (res.data?.data?.pic) {
+            resolve(res.data.data.pic);
+          } else {
+            resolve("/static/images/default-course.png");
+          }
+        },
+        fail: () => resolve("/static/images/default-course.png"),
+      });
+      return;
+    }
+
+    // 腾讯视频
+    const qqMatch = url.match(/v\.qq\.com\/x\/cover\/(\w+)\/(\w+)/);
+    if (qqMatch) {
+      // 先获取视频信息
+      uni.request({
+        url: `https://vv.video.qq.com/getinfo?vids=${qqMatch[2]}&platform=101001&charge=0&otype=json`,
+        success: (res: any) => {
+          try {
+            const data = JSON.parse(
+              res.data.replace(/QZOutputJson=/, "").slice(0, -1)
+            );
+            if (data?.vl?.vi?.[0]?.vid) {
+              resolve(
+                `https://puui.qpic.cn/vpic_cover/${data.vl.vi[0].vid}/${data.vl.vi[0].vid}_hz.jpg`
+              );
+            } else {
+              resolve("/static/images/default-course.png");
+            }
+          } catch {
+            resolve("/static/images/default-course.png");
+          }
+        },
+        fail: () => resolve("/static/images/default-course.png"),
+      });
+      return;
+    }
+
+    // 酷视频
+    const youkuMatch = url.match(/id_([\w=]+)/);
+    if (youkuMatch) {
+      // 先获取视频信息
+      uni.request({
+        url: `https://openapi.youku.com/v2/videos/show.json?video_id=${youkuMatch[1]}`,
+        success: (res: any) => {
+          if (res.data?.thumbnail_url) {
+            resolve(res.data.thumbnail_url);
+          } else {
+            resolve("/static/images/default-course.png");
+          }
+        },
+        fail: () => resolve("/static/images/default-course.png"),
+      });
+      return;
+    }
+
+    // 默认封面
+    resolve("/static/images/default-course.png");
+  });
+};
+
+// 修改作品数据
 const works = ref<Works[]>([
   {
     id: 1,
     title: "学生演奏视频",
-    cover: "/static/images/default-course.png",
     type: "video",
-    url: "https://cn-hk-eq-01-10.bilivideo.com/upgcxcode/36/06/26707820636/26707820636-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfq9rVEuxTEnE8L5F6VnEsSTx0vkX8fqJeYTj_lta53NCM=&uipk=5&nbs=1&deadline=1733896484&gen=playurlv2&os=bcache&oi=711124903&trid=0000c18ac45bf7194d488e3f69a5633d4cdbT&mid=336613241&platform=html5&og=cos&upsig=b3ecc3dd4ca51168dcb4cb8dd24dbcfd&uparams=e,uipk,nbs,deadline,gen,os,oi,trid,mid,platform,og&cdnid=68704&bvc=vod&nettype=0&bw=68504&orderid=0,1&buvid=&build=0&mobi_app=&f=T_0_0&logo=80000000",
+    url: "https://v.qq.com/x/cover/mzc002007sqbpce/y4100blirg2.html?url_from=share",
+    cover: "/static/images/default-course.png",
   },
   {
     id: 2,
-    title:
-      "顶级品质试听《春はゆく》Fate/stay night [Heaven's Feel] III经典主题曲，春樱之歌Aimer【Hi-Res】",
-    cover:
-      "https://i2.hdslb.com/bfs/archive/c066258d924de6919ceb4c556ab0d4cdb33e1b47.jpg@336w_190h_1c_!web-video-rcmd-cover.webp",
+    title: "顶级品质试听",
     type: "video",
-    url: "https://cn-hk-eq-01-10.bilivideo.com/upgcxcode/36/06/26707820636/26707820636-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfq9rVEuxTEnE8L5F6VnEsSTx0vkX8fqJeYTj_lta53NCM=&uipk=5&nbs=1&deadline=1733896484&gen=playurlv2&os=bcache&oi=711124903&trid=0000c18ac45bf7194d488e3f69a5633d4cdbT&mid=336613241&platform=html5&og=cos&upsig=b3ecc3dd4ca51168dcb4cb8dd24dbcfd&uparams=e,uipk,nbs,deadline,gen,os,oi,trid,mid,platform,og&cdnid=68704&bvc=vod&nettype=0&bw=68504&orderid=0,1&buvid=&build=0&mobi_app=&f=T_0_0&logo=80000000",
+    url: "https://www.bilibili.com/video/BV1gN411U7kN/",
+    cover: "/static/images/default-course.png",
+  },
+  {
+    id: 3,
+    title: "古筝演奏《青花瓷》",
+    type: "video",
+    url: "https://v.youku.com/v_show/id_XNjQ1MTY0NzgzMg==.html?spm=a2hja.14919748_WEBHOME_NEW.drawer17.d_zj1_3&playMode=pugv&scm=20140719.manual.5497.video_XNjQ1MTY0NzgzMg==",
+    cover: "/static/images/default-course.png",
   },
 ]);
+
+// 修改教员图片数组的计算属性
+const teacherImages = computed(() => {
+  const defaultImages = ["/static/images/default-teacher.png"];
+
+  if (!teacherInfo.value) return defaultImages;
+
+  if (teacherInfo.value.avatar) {
+    // 如果有头像，将头像作为第一张图片
+    const images = [teacherInfo.value.avatar];
+    // 检查并添加其他图片
+    if (teacherInfo.value.images && Array.isArray(teacherInfo.value.images)) {
+      images.push(...teacherInfo.value.images);
+    }
+    return images;
+  }
+
+  // 如果没有头像但有其他图片
+  if (
+    teacherInfo.value.images &&
+    Array.isArray(teacherInfo.value.images) &&
+    teacherInfo.value.images.length > 0
+  ) {
+    const images = [defaultImages];
+    images.push(...teacherInfo.value.images);
+    return images;
+  }
+
+  // 如果没有任何图片，返回默认图片
+  return defaultImages;
+});
+
+// 添加图片预览功能
+const previewImage = (current: string) => {
+  uni.previewImage({
+    urls: teacherImages.value,
+    current,
+  });
+};
 
 // 修改预览作品函数
 const previewWork = (work: any) => {
@@ -465,18 +586,50 @@ const previewWork = (work: any) => {
     });
   }
 };
+// 打开地图前检查经纬度
+const openMap = () => {
+  if (!teacherInfo.value?.latitude || !teacherInfo.value?.longitude) {
+    uni.showToast({
+      title: "暂无位置信息",
+      icon: "none",
+    });
+    return;
+  }
+
+  uni.openLocation({
+    latitude: teacherInfo.value.latitude,
+    longitude: teacherInfo.value.longitude,
+    name: teacherInfo.value?.name || "",
+    address: teacherInfo.value?.address || "",
+    fail: () => {
+      uni.showToast({
+        title: "打开地图失败",
+        icon: "none",
+      });
+    },
+  });
+};
 </script>
 
-<style>
+<style scoped>
 .teacher-detail {
   min-height: 100vh;
   background: #ffffff;
   padding-bottom: 120rpx;
 }
 
-.teacher-image {
+.teacher-swiper {
   width: 100%;
   height: 450rpx;
+}
+
+.swiper-image {
+  width: 100%;
+  height: 100%;
+}
+
+.teacher-image {
+  display: none;
 }
 
 .info-section {
@@ -674,7 +827,21 @@ const previewWork = (work: any) => {
   justify-content: space-between;
   align-items: center;
 }
-
+.nav-button-box {
+  display: flex;
+  align-items: center;
+  /* justify-content: space-between; */
+  gap: 10rpx;
+}
+.nav-button {
+  background: #007bff;
+  color: #ffffff;
+  font-size: 24rpx;
+  padding: 8rpx 24rpx;
+  border-radius: 24rpx;
+  line-height: 24rpx;
+  margin: 0 10rpx;
+}
 /* 评论区样式 */
 .comments-section {
   background: #fff;

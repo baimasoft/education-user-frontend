@@ -100,66 +100,66 @@ const categories = ref<Category[]>([
 ]);
 
 const courses = ref<Course[]>([
-  {
-    id: "1",
-    name: "钢琴基础课程",
-    description: "适合零基础学习者，从基本乐理知识开始",
-    price: 299,
-    sales: 156,
-    image: "",
-    categoryId: "piano",
-    tags: ["零基础", "一对一", "可试听"],
-  },
-  {
-    id: "2",
-    name: "吉他入门课程",
-    description: "通过简单曲目快速入门吉他弹唱",
-    price: 199,
-    sales: 234,
-    image: "",
-    categoryId: "guitar",
-    tags: ["热门", "免费教材", "可试听"],
-  },
-  {
-    id: "3",
-    name: "小提琴进阶课程",
-    description: "适合有基础的学员，提升演奏技巧",
-    price: 399,
-    sales: 89,
-    image: "",
-    categoryId: "violin",
-    tags: ["进阶", "一对一", "赠教材"],
-  },
-  {
-    id: "4",
-    name: "架子鼓速成班",
-    description: "一个月掌握基本节奏型，快速上手",
-    price: 499,
-    sales: 67,
-    image: "",
-    categoryId: "drum",
-    tags: ["速成班", "包会", "赠鼓棒"],
-  },
-  {
-    id: "5",
-    name: "声乐气息训练",
-    description: "专业声乐老师指导，科学发声方法",
-    price: 299,
-    sales: 178,
-    image: "",
-    categoryId: "vocal",
-    tags: ["专业老师", "考级", "可试听"],
-  },
-  {
-    id: "6",
-    name: "尤克里里速学班",
-    description: "轻松学习夏威夷小吉他，适合初学者",
-    price: 159,
-    sales: 245,
-    image: "",
-    categoryId: "ukulele",
-    tags: ["热门", "免费乐器", "包会"],
-  },
+  // {
+  //   id: "1",
+  //   name: "钢琴基础课程",
+  //   description: "适合零基础学习者，从基本乐理知识开始",
+  //   price: 299,
+  //   sales: 156,
+  //   image: "",
+  //   categoryId: "piano",
+  //   tags: ["零基础", "一对一", "可试听"],
+  // },
+  // {
+  //   id: "2",
+  //   name: "吉他入门课程",
+  //   description: "通过简单曲目快速入门吉他弹唱",
+  //   price: 199,
+  //   sales: 234,
+  //   image: "",
+  //   categoryId: "guitar",
+  //   tags: ["热门", "免费教材", "可试听"],
+  // },
+  // {
+  //   id: "3",
+  //   name: "小提琴进阶课程",
+  //   description: "适合有基础的学员，提升演奏技巧",
+  //   price: 399,
+  //   sales: 89,
+  //   image: "",
+  //   categoryId: "violin",
+  //   tags: ["进阶", "一对一", "赠教材"],
+  // },
+  // {
+  //   id: "4",
+  //   name: "架子鼓速成班",
+  //   description: "一个月掌握基本节奏型，快速上手",
+  //   price: 499,
+  //   sales: 67,
+  //   image: "",
+  //   categoryId: "drum",
+  //   tags: ["速成班", "包会", "赠鼓棒"],
+  // },
+  // {
+  //   id: "5",
+  //   name: "声乐气息训练",
+  //   description: "专业声乐老师指导，科学发声方法",
+  //   price: 299,
+  //   sales: 178,
+  //   image: "",
+  //   categoryId: "vocal",
+  //   tags: ["专业老师", "考级", "可试听"],
+  // },
+  // {
+  //   id: "6",
+  //   name: "尤克里里速学班",
+  //   description: "轻松学习夏威夷小吉他，适合初学者",
+  //   price: 159,
+  //   sales: 245,
+  //   image: "",
+  //   categoryId: "ukulele",
+  //   tags: ["热门", "免费乐器", "包会"],
+  // },
 ]);
 
 const handleCategoryChange = (categoryId: string) => {
@@ -279,6 +279,7 @@ const handleCourseClick = (course: Course) => {
 .empty-icon {
   width: 200rpx;
   height: 200rpx;
+  font-size: 80rpx;
   margin-bottom: 20rpx;
 }
 

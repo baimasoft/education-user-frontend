@@ -1,36 +1,31 @@
 <template>
   <view class="profile">
     <view class="user-card">
-      <view class="user-info" @tap="handleLogin">
+      <view class="user-info" @tap="handleUserClick">
         <image
           class="avatar"
-          src="/static/icons/default-login-avatar.png"
+          :src="userInfo?.avatar || '/static/icons/default-login-avatar.png'"
           mode="aspectFill"
         ></image>
         <view class="info">
-          <text class="nickname">昵称</text>
-          <text class="uid">UID: 123456</text>
+          <text class="nickname" v-if="isLoggedIn">{{
+            userInfo.nickname
+          }}</text>
+          <text class="login-tip" v-else>点击登录</text>
         </view>
-        <view class="settings-btn" @tap="handleMenuClick('settings')">
-          <image
-            class="settings-icon"
-            src="/static/icons/settings.png"
-            mode="aspectFit"
-          ></image>
-          <text>设置</text>
-        </view>
+        <text class="arrow">›</text>
       </view>
 
       <view class="user-stats">
-        <view class="stat-item">
+        <!-- <view class="stat-item">
           <text class="stat-value">{{ balance }}</text>
           <text class="stat-label">账户余额</text>
-        </view>
-        <view class="stat-item">
+        </view> -->
+        <view class="stat-item" @tap="handleCouponClick">
           <text class="stat-value">{{ couponCount }}</text>
           <text class="stat-label">优惠券</text>
         </view>
-        <view class="stat-item">
+        <view class="stat-item" @tap="handleFavoriteClick">
           <text class="stat-value">{{ favoriteCount }}</text>
           <text class="stat-label">我的收藏</text>
         </view>
@@ -38,6 +33,7 @@
     </view>
 
     <view class="feature-grid">
+      <!-- <view class="feature-item" @tap="handleServiceClick('appointment')"> -->
       <view class="feature-item" @tap="handleServiceClick('appointment')">
         <image
           class="feature-icon"
@@ -45,14 +41,6 @@
           mode="aspectFit"
         ></image>
         <text class="feature-label">我的预约</text>
-      </view>
-      <view class="feature-item" @tap="handleServiceClick('instrument')">
-        <image
-          class="feature-icon"
-          src="/static/icons/instrument.png"
-          mode="aspectFit"
-        ></image>
-        <text class="feature-label">课程订单</text>
       </view>
       <view class="feature-item" @tap="handleServiceClick('course')">
         <image
@@ -62,49 +50,36 @@
         ></image>
         <text class="feature-label">我的课程</text>
       </view>
+      <view class="feature-item" @tap="handleServiceClick('instrument')">
+        <image
+          class="feature-icon"
+          src="/static/icons/instrument.png"
+          mode="aspectFit"
+        ></image>
+        <text class="feature-label">我的乐器</text>
+      </view>
     </view>
 
     <view class="my-services-card">
-      <view class="section-title">我的服务</view>
+      <view class="section-title">我的收入</view>
       <view class="services-grid">
-        <view class="service-item" @tap="handleServiceClick('appointment')">
-          <!-- <view class="service-icon-wrapper">
-            <image
-              class="service-icon"
-              src="/static/icons/appointment.png"
-              mode="aspectFit"
-            ></image>
-            <text class="service-count" v-if="appointmentCount !== 0">{{
-              appointmentCount
-            }}</text>
+        <view class="service-item" @tap="handleTeamClick">
+          <view class="stat-number">
+            <text class="stat-value">0</text>人>
           </view>
-          <text class="service-label">我的预约</text> -->
+          <view class="stat-label">团队成员</view>
         </view>
-        <view class="service-item" @tap="handleServiceClick('instrument')">
-          <!-- <view class="service-icon-wrapper">
-            <image
-              class="service-icon"
-              src="/static/icons/instrument.png"
-              mode="aspectFit"
-            ></image>
-            <text class="service-count" v-if="instrumentCount !== 0">{{
-              instrumentCount
-            }}</text>
+        <view class="service-item" @tap="handleIncomeClick">
+          <view class="stat-number">
+            <text class="stat-value">0.00</text>元 >
           </view>
-          <text class="service-label">我的乐器</text> -->
+          <view class="stat-label">收入佣金</view>
         </view>
-        <view class="service-item" @tap="handleServiceClick('course')">
-          <!-- <view class="service-icon-wrapper">
-            <image
-              class="service-icon"
-              src="/static/icons/course.png"
-              mode="aspectFit"
-            ></image>
-            <text class="service-count" v-if="courseCount !== 0">{{
-              courseCount
-            }}</text>
+        <view class="service-item" @tap="handleWithdrawClick">
+          <view class="stat-number">
+            <text class="stat-value">0.00</text>元 >
           </view>
-          <text class="service-label">我的课程</text> -->
+          <view class="stat-label">可提现</view>
         </view>
       </view>
     </view>
@@ -136,14 +111,6 @@
           ></image>
           <text class="feature-label">举报有奖</text>
         </view>
-        <view class="feature-item" @tap="handleMoreFeatureClick('address')">
-          <image
-            class="feature-icon"
-            src="/static/icons/location.png"
-            mode="aspectFit"
-          ></image>
-          <text class="feature-label">地址管理</text>
-        </view>
         <view class="feature-item" @tap="handleMoreFeatureClick('about')">
           <image
             class="feature-icon"
@@ -151,6 +118,14 @@
             mode="aspectFit"
           ></image>
           <text class="feature-label">关于我们</text>
+        </view>
+        <view class="feature-item" @tap="handleMoreFeatureClick('address')">
+          <image
+            class="feature-icon"
+            src="/static/icons/location.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">地址管理</text>
         </view>
         <view class="feature-item" @tap="handleMoreFeatureClick('voucher')">
           <image
@@ -168,14 +143,22 @@
           ></image>
           <text class="feature-label">课程兑换码</text>
         </view>
-        <view class="feature-item" @tap="handleMoreFeatureClick('comment')">
+        <view class="feature-item" @tap="handleFeatureClick('invitationcode')">
+          <image
+            class="feature-icon"
+            src="/static/icons/invite.png"
+            mode="aspectFit"
+          ></image>
+          <text class="feature-label">填写邀请码</text>
+        </view>
+        <!-- <view class="feature-item" @tap="handleMoreFeatureClick('comment')">
           <image
             class="feature-icon"
             src="/static/icons/comment.png"
             mode="aspectFit"
           ></image>
           <text class="feature-label">评论管理</text>
-        </view>
+        </view> -->
       </view>
     </view>
     <!-- 课程兑换码弹窗 -->
@@ -186,14 +169,21 @@
     >
       <view class="modal-content" @tap.stop>
         <view class="modal-header">
-          <text class="modal-title">课程兑换</text>
+          <text class="modal-title">{{ showCodeModalTitle }}</text>
           <view class="close-button" @tap="showCouponCodeModal = false">×</view>
         </view>
         <view class="modal-body">
           <input
             v-model="couponCode"
             type="text"
-            placeholder="请输入课程兑换码"
+            :placeholder="
+              showCodeModalTitle === '课程兑换'
+                ? '请输入课程兑换码'
+                : '请输入邀请码'
+            "
+            :disabled="
+              showCodeModalTitle === '填写邀请码' && couponCode.length > 0
+            "
             class="coupon-input"
           />
         </view>
@@ -208,69 +198,131 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref, onMounted } from "vue";
+import { useUserStore } from "@/stores/user";
 
-// Mock data for demonstration
-const appointmentCount = ref(2);
-const courseCount = ref(1);
-const balance = ref("0.00");
-const couponCount = ref(0);
-const favoriteCount = ref(0);
-const instrumentCount = ref(0);
+const userStore = useUserStore();
+const showLogoutModal = ref(false);
 const showCouponCodeModal = ref(false);
+const showCodeModalTitle = ref<string>("");
 const couponCode = ref("");
+const invitationCode = ref<boolean>(false);
+// 用户信息
+const userInfo = computed(() => userStore.userInfo);
+const isLoggedIn = computed(() => userStore.userInfo.isLoggedIn);
 
-const handleCouponCodeSubmit = () => {
-  if (!couponCode.value) {
+// 检查登录状态
+const checkLoginStatus = () => {
+  const token = uni.getStorageSync("token");
+  if (token && !isLoggedIn.value) {
+    // 如果有token但未登录，说明是刷新或重新打开应用
+    // 这里可以调用后端接口验证token
+    // 暂时模拟自动登录
+    userStore.login({
+      token,
+      userInfo: {
+        isLoggedIn: true,
+        nickname: "用户" + Math.floor(Math.random() * 1000),
+        avatar: "",
+        balance: 0,
+        couponCount: 0,
+        favoriteCount: 0,
+      },
+    });
+  }
+};
+
+// 页面加载时检查登录状态
+onMounted(() => {
+  checkLoginStatus();
+});
+
+// 处理用户点击
+const handleUserClick = () => {
+  if (!isLoggedIn.value) {
+    uni.navigateTo({
+      url: "/pages/login/login",
+    });
+    return;
+  }
+  // 已登录时显示退出登录确认框
+  showLogoutModal.value = true;
+  handleLogout();
+};
+
+// 处理退出登录
+const handleLogout = () => {
+  uni.showModal({
+    title: "提示",
+    content: "确定要退出登录吗？",
+    success: (res) => {
+      if (res.confirm) {
+        // 清除token和用户信息
+        userStore.logout();
+        uni.showToast({
+          title: "已退出登录",
+          icon: "success",
+        });
+      }
+    },
+  });
+  showLogoutModal.value = false;
+};
+
+// 用户统计数据
+const balance = computed(() => userInfo.value.balance);
+const couponCount = computed(() => userInfo.value.couponCount);
+const favoriteCount = computed(() => userInfo.value.favoriteCount);
+
+// 其他功能点击处理
+const handleServiceClick = (type: string) => {
+  if (!isLoggedIn.value) {
+    const token = uni.getStorageSync("token");
+    if (token) {
+      checkLoginStatus();
+      return;
+    }
     uni.showToast({
-      title: "请输入兑换码",
+      title: "请先登录",
       icon: "none",
     });
     return;
   }
-  uni.showToast({
-    title: "功能开发中",
-    icon: "none",
-  });
-};
-const handleLogin = () => {
-  uni.showToast({
-    title: "登录功能开发中",
-    icon: "none",
-  });
-};
 
-const handleFeatureClick = (type: string) => {
   const routes: Record<string, string> = {
-    teaching: "/pages/orders/orders",
-    course: "/pages/orders/orders",
-    coupon: "/pages/coupon/list",
+    // appointment: "/pages/appointment/appointment",
+    appointment: "/pages/orders/orders",
+    instrument: "/pages/instrument/index",
+    course: "/pages/course/index",
   };
 
   const route = routes[type];
   if (route) {
-    try {
-      if (type === "teaching") {
-        // 对于教员订单，存储教员分类
-        uni.setStorageSync("orderCategory", "teacher");
-        uni.switchTab({ url: route });
-      } else if (type === "course") {
-        // 对于课程订单，存储课程分类
-        uni.setStorageSync("orderCategory", "course");
-        uni.switchTab({ url: route });
-      } else if (type === "coupon") {
-        // 对于课程兑换码，弹出输入框
-        showCouponCodeModal.value = true;
-      }
-    } catch {
-      uni.showToast({
-        title: "功能开发中",
-        icon: "none",
+    if (type !== "appointment") {
+      uni.navigateTo({
+        url: route,
+        fail: () => {
+          uni.showToast({
+            title: "功能开发中",
+            icon: "none",
+          });
+        },
+      });
+    } else {
+      uni.switchTab({
+        url: route,
+        fail: () => {
+          uni.showToast({
+            title: "功能开发中",
+            icon: "none",
+          });
+        },
       });
     }
   }
 };
 
+// 更多功能点击处理
 const handleMoreFeatureClick = (type: string) => {
   const routes: Record<string, string> = {
     invite: "/pages/invite/index",
@@ -281,54 +333,144 @@ const handleMoreFeatureClick = (type: string) => {
     voucher: "/pages/voucher/index",
     comment: "/pages/comment/index",
   };
-
   const route = routes[type];
-  if (route) {
-    try {
-      uni.navigateTo({
-        url: route,
-        fail: () => {
-          uni.showToast({
-            title: "功能开发中",
-            icon: "none",
-          });
-        },
-      });
-    } catch {
+
+  if ((type === "address" || type === "voucher") && !isLoggedIn.value) {
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: route,
+    fail: () => {
       uni.showToast({
         title: "功能开发中",
         icon: "none",
       });
-    }
-  }
+    },
+  });
 };
 
-const handleServiceClick = (type: string) => {
+// 处理功能点击
+const handleFeatureClick = (type: string) => {
+  if (!isLoggedIn.value) {
+    // 检查是否有token
+    const token = uni.getStorageSync("token");
+    if (token) {
+      checkLoginStatus();
+      return;
+    }
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  if (type === "coupon" || type === "invitationcode") {
+    showCouponCodeModal.value = true;
+    showCodeModalTitle.value = type === "coupon" ? "课程兑换" : "填写邀请码";
+    couponCode.value = type === "coupon" ? "" : "GSDKJDFY";
+    invitationCode.value = couponCode.value ? true : false;
+    return;
+  }
   const routes: Record<string, string> = {
-    appointment: "/pages/appointment/appointment",
-    instrument: "/pages/instrument/index",
-    course: "/pages/course/index",
+    teaching: "/pages/orders/orders",
+    course: "/pages/orders/orders",
   };
 
   const route = routes[type];
   if (route) {
-    try {
-      uni.navigateTo({
-        url: route,
-        fail: () => {
-          uni.showToast({
-            title: "功能开发中",
-            icon: "none",
-          });
-        },
-      });
-    } catch {
-      uni.showToast({
-        title: "功能开发中",
-        icon: "none",
-      });
-    }
+    uni.navigateTo({
+      url: route,
+      fail: () => {
+        uni.showToast({
+          title: "功能开发中",
+          icon: "none",
+        });
+      },
+    });
   }
+};
+const handleCouponCodeSubmit = () => {
+  if (invitationCode.value) {
+    uni.showToast({
+      title: "已使用过邀请码",
+      icon: "none",
+    });
+    return;
+  }
+  uni.showToast({
+    title: "兑换成功",
+    icon: "success",
+  });
+};
+const handleTeamClick = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: "/pages/team/team",
+  });
+};
+
+const handleIncomeClick = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: "/pages/income/commission",
+  });
+};
+
+const handleWithdrawClick = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: "/pages/income/withdraw",
+  });
+};
+
+// 在 script setup 中添加优惠券点击处理
+const handleCouponClick = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: "/pages/voucher/voucher",
+  });
+};
+
+// 在 script setup 中添加收藏点击处理
+const handleFavoriteClick = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({
+      title: "请先登录",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: "/pages/favorite/favorite",
+  });
 };
 </script>
 
@@ -405,7 +547,7 @@ const handleServiceClick = (type: string) => {
   display: flex;
   align-items: center;
   padding: 32rpx;
-  padding-right: 120rpx;
+  padding-right: 40rpx;
   border-bottom: 1rpx solid #f5f5f5;
   position: relative;
 }
@@ -474,7 +616,9 @@ const handleServiceClick = (type: string) => {
   height: 50%;
   background-color: #f0f0f0;
 }
-
+.stat-number {
+  margin-bottom: 10rpx;
+}
 .stat-value {
   font-size: 32rpx;
   font-weight: bold;
@@ -621,5 +765,16 @@ const handleServiceClick = (type: string) => {
 .service-label {
   font-size: 28rpx;
   color: #333;
+}
+
+.login-tip {
+  font-size: 32rpx;
+  color: #999999;
+}
+
+.arrow {
+  font-size: 36rpx;
+  color: #999999;
+  margin-left: auto;
 }
 </style>

@@ -87,13 +87,13 @@
           >
             归还
           </button>
-          <button
+          <!-- <button
             v-if="currentTab === 'owned'"
             class="sell-btn"
             @tap="sellInstrument(instrument.id)"
           >
             出售
-          </button>
+          </button> -->
         </view>
       </view>
     </view>
@@ -448,13 +448,14 @@ const addInstrument = () => {
   align-items: center;
   justify-content: center;
   padding: 80rpx 0;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  /* border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1); */
 }
 
 .empty-icon {
   width: 200rpx;
   height: 200rpx;
+  font-size: 80rpx;
   margin-bottom: 20rpx;
 }
 

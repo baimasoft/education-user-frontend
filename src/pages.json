@@ -25,6 +25,12 @@
       }
     },
     {
+      "path": "pages/orders/order-detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
       "path": "pages/nearby/nearby",
       "style": {
         "navigationBarTitleText": "附近门店"
@@ -126,6 +132,61 @@
         "navigationBarTitleText": "视频播放",
         "navigationBarBackgroundColor": "#000000",
         "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/team/team",
+      "style": {
+        "navigationBarTitleText": "团队成员"
+      }
+    },
+    {
+      "path": "pages/income/commission",
+      "style": {
+        "navigationBarTitleText": "收入佣金"
+      }
+    },
+    {
+      "path": "pages/income/withdraw",
+      "style": {
+        "navigationBarTitleText": "提现"
+      }
+    },
+    {
+      "path": "pages/voucher/voucher",
+      "style": {
+        "navigationBarTitleText": "我的优惠券"
+      }
+    },
+    {
+      "path": "pages/favorite/favorite",
+      "style": {
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
+      "path": "pages/about/index",
+      "style": {
+        "navigationBarTitleText": "关于我们"
+      }
+    },
+    {
+      "path": "pages/rewards/index",
+      "style": {
+        "navigationBarTitleText": "举报有奖"
+      }
+    },
+    {
+      "path": "pages/invite/index",
+      "style": {
+        "navigationBarTitleText": "邀请好友"
       }
     }
   ],
